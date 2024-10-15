@@ -1,0 +1,45 @@
+{
+  "name": "nodoku-i18n",
+  "version": "0.1.0",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "dist": "shx rm -rf dist && tsc"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.12.11",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.2.3",
+    "i18next": "^23.11.5",
+    "i18next-resources-to-backend": "^1.2.1",
+    "next": "14.2.10",
+    "nodoku-core": "file:../nodoku-core",
+    "react-i18next": "^14.1.2",
+    "typescript": "^5"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.3",
+    "shx": "^0.3.4",
+    "typescript": "^5"
+  }
+}
