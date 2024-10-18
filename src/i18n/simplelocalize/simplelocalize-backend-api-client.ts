@@ -139,14 +139,14 @@ export class SimplelocalizeBackendApiClient {
             const chunks: UpdatingValue[][] =
                 SimplelocalizeBackendApiClient.flatReqsChunked(SimplelocalizeBackendApiClient.missingKeysRequests, 100)
 
-            await Promise.all(chunks.map(async (reqs: UpdatingValue[]) => {
+            for (const reqs of chunks) {
                 await SimplelocalizeBackendApiClient.pushKeys(reqs.map(r => r.updKey))
                 await SimplelocalizeBackendApiClient.updateTranslations(reqs)
 
                 reqs.forEach((v: UpdatingValue) => {
                     SimplelocalizeBackendApiClient.missingKeysRequests.delete(v.updKey)
                 })
-            }))
+            }
 
         }
 
@@ -156,7 +156,7 @@ export class SimplelocalizeBackendApiClient {
                 SimplelocalizeBackendApiClient.flatReqsChunked(SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated, 100)
 
 
-            await Promise.all(chunks.map(async (reqs: UpdatingValue[]) => {
+            for (const reqs of chunks) {
                 if (SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy === OnFallbackLngTextUpdateStrategyImpl.delete_translations) {
                     await SimplelocalizeBackendApiClient.deleteKeys(reqs.map(k => k.updKey))
                     await SimplelocalizeBackendApiClient.pushKeys(reqs.map(k => k.updKey))
@@ -170,7 +170,7 @@ export class SimplelocalizeBackendApiClient {
                 reqs.forEach((v: UpdatingValue) => {
                     SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.delete(v.updKey)
                 })
-            }))
+            }
         }
 
     }

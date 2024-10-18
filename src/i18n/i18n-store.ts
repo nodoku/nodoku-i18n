@@ -67,12 +67,13 @@ export class I18nStore {
                 [key: string]: LanguageTranslationResource;
             }
         } = {};
-        await Promise.all(namespaces.map(async (ns: string) => {
+
+        for (const ns of namespaces) {
             translationResources[lng] = {};
             translationResources[lng][ns] = await translationToResource(lng, ns)
             translationResources[fallbackLng] = {};
             translationResources[fallbackLng][ns] = await translationToResource(fallbackLng, ns)
-        }));
+        }
 
         return {
             // debug: true,
