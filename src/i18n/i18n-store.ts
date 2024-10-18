@@ -3,7 +3,7 @@ import resourcesToBackend from "i18next-resources-to-backend";
 import type {InitOptions} from "i18next";
 import {NdTranslatedText} from "nodoku-core";
 
-export type LanguageTranslationResource = {[key: string]: string}
+export type LanguageNsTranslationResource = {[key: string]: string}
 
 export type UpdatedKey = {language: string; namespace: string; key: string}
 
@@ -14,7 +14,7 @@ export type MissingKeyHandler = (lngs: readonly string[],
                                  updateMissing: boolean,
                                  options: any) => void;
 
-export type TranslationResourceLoader = (lng: string, ns: string) => Promise<LanguageTranslationResource>;
+export type TranslationResourceLoader = (lng: string, ns: string) => Promise<LanguageNsTranslationResource>;
 
 export class I18nStore {
 
@@ -64,7 +64,7 @@ export class I18nStore {
                                        missingKeyHandler: MissingKeyHandler): Promise<InitOptions> {
 
         const translationResources: { [key: string]: {
-                [key: string]: LanguageTranslationResource;
+                [key: string]: LanguageNsTranslationResource;
             }
         } = {};
 
@@ -117,10 +117,16 @@ export class I18nStore {
                         onFallbackLanguageValueChange(fallbackLng, text.ns, text.key, text.text.trim())
                     }
 
-                    // const details = i18n.t(text.key, {ns: text.ns, returnDetails: true})
                     const details = i18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
-                    // console.log(">>>>>>>.... details", details.res.length, details)
-                    return details.usedLng === lng && details.res && details.res.length > 0 ? details.res : `<small style="font-size: 12px">n/a ${lng}:${text.ns}:${text.key}</small>[${existingFallback}]`;
+                    console.log(">>>>>>>.... details", text, details.res.length, details)
+                    const translationExists = details.usedLng === lng && details.res && details.res.length > 0;
+                    if (translationExists) {
+                        return details.res;
+                    } else if (text.excludeFromTranslation && existingFallback.length > 0) {
+                        return existingFallback;
+                    }
+
+                    return I18nStore.decorateUntranslated(lng, text, existingFallback);
                 } else {
                     return `${lng}.{${text.ns}:${text.key}}`
                 }
@@ -129,6 +135,9 @@ export class I18nStore {
 
     }
 
+    private static decorateUntranslated(lng: string, text: NdTranslatedText, existingFallback: string) {
+        return `<small style="font-size: 12px">n/a ${lng}:${text.ns}:${text.key}</small>[${existingFallback}]`;
+    }
 
 }
 

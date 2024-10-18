@@ -1,7 +1,7 @@
 import LanguageDefImpl from "../language-def-impl";
 import {
     I18nStore,
-    LanguageTranslationResource,
+    LanguageNsTranslationResource,
     MissingKeyHandler,
     TranslationResourceLoader,
     UpdatedKey
@@ -100,7 +100,7 @@ export class SimplelocalizeBackendApiClient {
         SimplelocalizeBackendApiClient.loadTranslationsUsingApi :
         SimplelocalizeBackendApiClient.loadTranslationsUsingCdn;
 
-    private static async loadTranslationsUsingCdn(language: string, ns: string): Promise<LanguageTranslationResource> {
+    private static async loadTranslationsUsingCdn(language: string, ns: string): Promise<LanguageNsTranslationResource> {
         console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${loadPathBase}/${language}/${ns}`);
         const resp = await fetch(`${loadPathBase}/${language}/${ns}`);
         const reply = await resp.json();
@@ -108,7 +108,7 @@ export class SimplelocalizeBackendApiClient {
         return reply;
     }
 
-    private static async loadTranslationsUsingApi(language: string, ns: string): Promise<LanguageTranslationResource> {
+    private static async loadTranslationsUsingApi(language: string, ns: string): Promise<LanguageNsTranslationResource> {
         console.log("querying the language ", language, " on namespace ", ns, "url", `${loadTranslationsApiBase}?namespace=${ns}&language=${language}`);
         const resp = await fetch(`${loadTranslationsApiBase}?namespace=${ns}&language=${language}`, {
             method: 'GET',
@@ -120,7 +120,7 @@ export class SimplelocalizeBackendApiClient {
             cache: 'no-cache'
         })
         const reply = await resp.json();
-        const translatedReply: LanguageTranslationResource = {};
+        const translatedReply: LanguageNsTranslationResource = {};
         reply.data.forEach((t: any) => {
             translatedReply[t.key] = t.text;
         });
