@@ -51,7 +51,9 @@ export namespace NodokuI18n {
         }
 
         export async function i18nForNodoku(lng: string): Promise<{t: (text: NdTranslatedText) => string}> {
-            return I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange);
+            return I18nStore.i18nForNodokuImpl(lng,
+                SimplelocalizeBackendApiClient.onFallbackLanguageValueChange,
+                SimplelocalizeBackendApiClient.onPushMissingTranslation);
         }
 
     }

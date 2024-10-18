@@ -1,7 +1,7 @@
 import LanguageDefImpl from "../language-def-impl";
 import {
     I18nStore,
-    LanguageTranslationResource,
+    LanguageNsTranslationResource,
     MissingKeyHandler,
     TranslationResourceLoader,
     UpdatedKey
@@ -41,6 +41,7 @@ export class SimplelocalizeBackendApiClient {
 
     private static missingKeysRequests: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
     private static fallbackLanguageValuesToBeUpdated: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
+    private static pushMissingTranslationReqs: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
 
     public static onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl = OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only;
 
@@ -96,11 +97,19 @@ export class SimplelocalizeBackendApiClient {
 
     }
 
+    static onPushMissingTranslation(language: string, namespace: string, key: string, text: string): void {
+
+        const missingKey: UpdatedKey = {language: language, namespace: namespace, key: key};
+
+        SimplelocalizeBackendApiClient.pushMissingTranslationReqs.set(missingKey, text)
+
+    }
+
     static resourceLoader: TranslationResourceLoader = environment === '_latest' ?
         SimplelocalizeBackendApiClient.loadTranslationsUsingApi :
         SimplelocalizeBackendApiClient.loadTranslationsUsingCdn;
 
-    private static async loadTranslationsUsingCdn(language: string, ns: string): Promise<LanguageTranslationResource> {
+    private static async loadTranslationsUsingCdn(language: string, ns: string): Promise<LanguageNsTranslationResource> {
         console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${loadPathBase}/${language}/${ns}`);
         const resp = await fetch(`${loadPathBase}/${language}/${ns}`);
         const reply = await resp.json();
@@ -108,7 +117,7 @@ export class SimplelocalizeBackendApiClient {
         return reply;
     }
 
-    private static async loadTranslationsUsingApi(language: string, ns: string): Promise<LanguageTranslationResource> {
+    private static async loadTranslationsUsingApi(language: string, ns: string): Promise<LanguageNsTranslationResource> {
         console.log("querying the language ", language, " on namespace ", ns, "url", `${loadTranslationsApiBase}?namespace=${ns}&language=${language}`);
         const resp = await fetch(`${loadTranslationsApiBase}?namespace=${ns}&language=${language}`, {
             method: 'GET',
@@ -120,19 +129,15 @@ export class SimplelocalizeBackendApiClient {
             cache: 'no-cache'
         })
         const reply = await resp.json();
-        const translatedReply: LanguageTranslationResource = {};
+        const translatedReply: LanguageNsTranslationResource = {};
         reply.data.forEach((t: any) => {
             translatedReply[t.key] = t.text;
         });
-        console.log("translatedReply", language, ns, translatedReply)
+        // console.log("translatedReply", language, ns, translatedReply)
         return translatedReply;
     }
 
     static async pushMissingKeys() {
-
-        const shoulReload =
-            SimplelocalizeBackendApiClient.missingKeysRequests.size() > 0 ||
-            SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.size() > 0;
 
         if (SimplelocalizeBackendApiClient.missingKeysRequests.size() > 0) {
 
@@ -169,6 +174,20 @@ export class SimplelocalizeBackendApiClient {
 
                 reqs.forEach((v: UpdatingValue) => {
                     SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.delete(v.updKey)
+                })
+            }
+        }
+
+        if (SimplelocalizeBackendApiClient.pushMissingTranslationReqs.size() > 0) {
+
+            const chunks: UpdatingValue[][] =
+                SimplelocalizeBackendApiClient.flatReqsChunked(SimplelocalizeBackendApiClient.pushMissingTranslationReqs, 100)
+
+            for (const reqs of chunks) {
+                await SimplelocalizeBackendApiClient.updateTranslations(reqs)
+
+                reqs.forEach((v: UpdatingValue) => {
+                    SimplelocalizeBackendApiClient.pushMissingTranslationReqs.delete(v.updKey)
                 })
             }
         }

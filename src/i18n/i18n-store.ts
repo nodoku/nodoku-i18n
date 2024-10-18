@@ -3,7 +3,7 @@ import resourcesToBackend from "i18next-resources-to-backend";
 import type {InitOptions} from "i18next";
 import {NdTranslatedText} from "nodoku-core";
 
-export type LanguageTranslationResource = {[key: string]: string}
+export type LanguageNsTranslationResource = {[key: string]: string}
 
 export type UpdatedKey = {language: string; namespace: string; key: string}
 
@@ -14,7 +14,7 @@ export type MissingKeyHandler = (lngs: readonly string[],
                                  updateMissing: boolean,
                                  options: any) => void;
 
-export type TranslationResourceLoader = (lng: string, ns: string) => Promise<LanguageTranslationResource>;
+export type TranslationResourceLoader = (lng: string, ns: string) => Promise<LanguageNsTranslationResource>;
 
 export class I18nStore {
 
@@ -38,7 +38,7 @@ export class I18nStore {
 
         const i18n = await I18nStore.createAndInitI18next(lng, nampespaces, fallbackLng, resourceLoader, missingKeyHandler);
 
-        console.log("loaded i18n", lng, i18n.store.data)
+        console.log("loaded i18n", lng/*, i18n.store.data*/)
 
         I18nStore.i18nByLangByNs.set(lng, i18n);
 
@@ -64,7 +64,7 @@ export class I18nStore {
                                        missingKeyHandler: MissingKeyHandler): Promise<InitOptions> {
 
         const translationResources: { [key: string]: {
-                [key: string]: LanguageTranslationResource;
+                [key: string]: LanguageNsTranslationResource;
             }
         } = {};
 
@@ -97,7 +97,9 @@ export class I18nStore {
         return t(key);
     }
 
-    static async i18nForNodokuImpl(lng: string, onFallbackLanguageValueChange: (language: string, namespace: string, key: string, text: string) => void): Promise<{
+    static async i18nForNodokuImpl(lng: string,
+                                   onFallbackLanguageValueChange: (language: string, namespace: string, key: string, text: string) => void,
+                                   onPushMissingTranslation: (language: string, namespace: string, key: string, text: string) => void): Promise<{
         t: (text: NdTranslatedText) => string
     }> {
 
@@ -117,10 +119,18 @@ export class I18nStore {
                         onFallbackLanguageValueChange(fallbackLng, text.ns, text.key, text.text.trim())
                     }
 
-                    // const details = i18n.t(text.key, {ns: text.ns, returnDetails: true})
                     const details = i18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
-                    // console.log(">>>>>>>.... details", details.res.length, details)
-                    return details.usedLng === lng && details.res && details.res.length > 0 ? details.res : `<small style="font-size: 12px">n/a ${lng}:${text.ns}:${text.key}</small>[${existingFallback}]`;
+                    console.log(">>>>>>>.... details", text, details.res.length, details)
+                    const translationExists = details.usedLng === lng && details.res && details.res.length > 0;
+                    if (text.excludeFromTranslation) {
+                        console.log("detected text excluded from translation", lng, text.ns, text.key, existingFallback)
+                        if (!translationExists && existingFallback.length > 0) {
+                            onPushMissingTranslation(lng, text.ns, text.key, existingFallback)
+                            return existingFallback;
+                        }
+                    }
+
+                    return translationExists ? details.res : I18nStore.decorateUntranslated(lng, text, existingFallback);
                 } else {
                     return `${lng}.{${text.ns}:${text.key}}`
                 }
@@ -129,6 +139,9 @@ export class I18nStore {
 
     }
 
+    private static decorateUntranslated(lng: string, text: NdTranslatedText, existingFallback: string) {
+        return `<small style="font-size: 12px">n/a ${lng}:${text.ns}:${text.key}</small>[${existingFallback}]`;
+    }
 
 }
 

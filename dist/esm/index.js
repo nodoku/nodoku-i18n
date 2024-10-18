@@ -91,7 +91,7 @@ export var NodokuI18n;
         function i18nForNodoku(lng) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
-                    return [2 /*return*/, I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange)];
+                    return [2 /*return*/, I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange, SimplelocalizeBackendApiClient.onPushMissingTranslation)];
                 });
             });
         }
