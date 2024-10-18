@@ -34,36 +34,67 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { allLanguagesImpl, i18nForNodokuImpl, loadAllLangsAndNamespacesImpl } from "./i18n/simplelocalize/server-i18n-conf";
-export var NodokuI18nSimplelocalize;
-(function (NodokuI18nSimplelocalize) {
-    function loadAllLangsAndNamespaces(lng, nampespaces, fallbackLng) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, loadAllLangsAndNamespacesImpl(lng, nampespaces, fallbackLng)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
+import { I18nStore } from "./i18n/i18n-store";
+import { OnFallbackLngTextUpdateStrategyImpl, SimplelocalizeBackendApiClient } from "./i18n/simplelocalize/simplelocalize-backend-api-client";
+export var NodokuI18n;
+(function (NodokuI18n) {
+    var Simplelocalize;
+    (function (Simplelocalize) {
+        Simplelocalize.OnfallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
+        function initI18nStore(lng_1, nampespaces_1, fallbackLng_1) {
+            return __awaiter(this, arguments, void 0, function (lng, nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy) {
+                var allLlngs, all, _i, allLlngs_1, lng_2, i18n;
+                if (onFallbackLngTextUpdateStrategy === void 0) { onFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only; }
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, allLanguages()];
+                        case 1:
+                            allLlngs = _a.sent();
+                            all = [];
+                            _i = 0, allLlngs_1 = allLlngs;
+                            _a.label = 2;
+                        case 2:
+                            if (!(_i < allLlngs_1.length)) return [3 /*break*/, 5];
+                            lng_2 = allLlngs_1[_i];
+                            if (!(lng_2.key !== fallbackLng)) return [3 /*break*/, 4];
+                            return [4 /*yield*/, I18nStore.initStore(lng_2.key, nampespaces, fallbackLng, SimplelocalizeBackendApiClient.resourceLoader, SimplelocalizeBackendApiClient.missingKeyHandler)];
+                        case 3:
+                            i18n = _a.sent();
+                            all.push(i18n);
+                            _a.label = 4;
+                        case 4:
+                            _i++;
+                            return [3 /*break*/, 2];
+                        case 5:
+                            console.log("loaded i18n's :", all.map(function (i) {
+                                return {
+                                    lng: i.language,
+                                    loaded: i.hasLoadedNamespace(nampespaces)
+                                };
+                            }));
+                            SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
+                            setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000);
+                            return [2 /*return*/];
+                    }
+                });
             });
-        });
-    }
-    NodokuI18nSimplelocalize.loadAllLangsAndNamespaces = loadAllLangsAndNamespaces;
-    function allLanguages() {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, allLanguagesImpl()];
+        }
+        Simplelocalize.initI18nStore = initI18nStore;
+        function allLanguages() {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, SimplelocalizeBackendApiClient.allLanguagesImpl()];
+                });
             });
-        });
-    }
-    NodokuI18nSimplelocalize.allLanguages = allLanguages;
-    function i18nForNodoku(lng) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, i18nForNodokuImpl(lng)];
+        }
+        Simplelocalize.allLanguages = allLanguages;
+        function i18nForNodoku(lng) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange)];
+                });
             });
-        });
-    }
-    NodokuI18nSimplelocalize.i18nForNodoku = i18nForNodoku;
-})(NodokuI18nSimplelocalize || (NodokuI18nSimplelocalize = {}));
+        }
+        Simplelocalize.i18nForNodoku = i18nForNodoku;
+    })(Simplelocalize = NodokuI18n.Simplelocalize || (NodokuI18n.Simplelocalize = {}));
+})(NodokuI18n || (NodokuI18n = {}));

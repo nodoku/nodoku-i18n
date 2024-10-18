@@ -1,7 +1,7 @@
 import i18next, {Resource} from "i18next";
 import {initReactI18next, useTranslation} from "react-i18next";
 // import resourcesToBackend from "i18next-resources-to-backend";
-import {getOptions} from "./settings";
+// import {getOptions} from "./settings";
 
 const runsOnServerSide = typeof window === 'undefined'
 
@@ -25,16 +25,16 @@ export const environment = "_latest"; // or "_production"
 //     return await resp.json()
 // }
 
-export function useTranslationClient(lng: string, ns: string, languages: string[], resources: Resource)  {
-
-
-
-    if (!i18next.isInitialized && languages) {
-        i18next
-            .use(initReactI18next)
-            // .use(resourcesToBackend(translationToResource))
-            .init({...getOptions(lng, ns, 'en'/*, languages*/), resources: resources})
-    }
-
-    return useTranslation(ns, getOptions(lng, ns, 'en'/*, languages*/));
-}
+// export function useTranslationClient(lng: string, ns: string, languages: string[], resources: Resource)  {
+//
+//
+//
+//     if (!i18next.isInitialized && languages) {
+//         i18next
+//             .use(initReactI18next)
+//             // .use(resourcesToBackend(translationToResource))
+//             .init({...getOptions(lng, ns, 'en'/*, languages*/), resources: resources})
+//     }
+//
+//     return useTranslation(ns, getOptions(lng, ns, 'en'/*, languages*/));
+// }
