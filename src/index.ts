@@ -7,7 +7,7 @@ import {
 } from "./i18n/simplelocalize/simplelocalize-backend-api-client";
 import {i18n} from "i18next";
 
-
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export namespace NodokuI18n {
 
@@ -33,6 +33,8 @@ export namespace NodokuI18n {
                             SimplelocalizeBackendApiClient.missingKeyHandler);
 
                     all.push(i18n);
+
+                    await delay(100);
                 }
             }
 

@@ -1,5 +1,5 @@
 import {createInstance, i18n} from 'i18next'
-import resourcesToBackend from 'i18next-resources-to-backend'
+// import resourcesToBackend from 'i18next-resources-to-backend'
 // import {apiKey, onFallbackLanguageValueChange} from './settings'
 import LanguageDefImpl from "../language-def-impl";
 import {NdTranslatedText} from "nodoku-core";

@@ -36,6 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { I18nStore } from "./i18n/i18n-store";
 import { OnFallbackLngTextUpdateStrategyImpl, SimplelocalizeBackendApiClient } from "./i18n/simplelocalize/simplelocalize-backend-api-client";
+var delay = function (ms) { return new Promise(function (res) { return setTimeout(res, ms); }); };
 export var NodokuI18n;
 (function (NodokuI18n) {
     var Simplelocalize;
@@ -54,18 +55,21 @@ export var NodokuI18n;
                             _i = 0, allLlngs_1 = allLlngs;
                             _a.label = 2;
                         case 2:
-                            if (!(_i < allLlngs_1.length)) return [3 /*break*/, 5];
+                            if (!(_i < allLlngs_1.length)) return [3 /*break*/, 6];
                             lng_2 = allLlngs_1[_i];
-                            if (!(lng_2.key !== fallbackLng)) return [3 /*break*/, 4];
+                            if (!(lng_2.key !== fallbackLng)) return [3 /*break*/, 5];
                             return [4 /*yield*/, I18nStore.initStore(lng_2.key, nampespaces, fallbackLng, SimplelocalizeBackendApiClient.resourceLoader, SimplelocalizeBackendApiClient.missingKeyHandler)];
                         case 3:
                             i18n = _a.sent();
                             all.push(i18n);
-                            _a.label = 4;
+                            return [4 /*yield*/, delay(100)];
                         case 4:
+                            _a.sent();
+                            _a.label = 5;
+                        case 5:
                             _i++;
                             return [3 /*break*/, 2];
-                        case 5:
+                        case 6:
                             console.log("loaded i18n's :", all.map(function (i) {
                                 return {
                                     lng: i.language,
