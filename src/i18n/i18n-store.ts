@@ -111,19 +111,20 @@ export class I18nStore {
                     /*
                      * make sure the fallback lng translation is intercepted by the missing key handler and eventually written to backend
                      */
-                    const existingFallback: string = i18n.getFixedT(fallbackLng, text.ns)(text.key, text.text.trim())
-                    if (existingFallback !== text.text.trim()) {
-                        console.log("detected translation change: ", existingFallback, text.text.trim())
-                        onFallbackLanguageValueChange(fallbackLng, text.ns, text.key, text.text.trim())
+                    const fallbackText = text.excludeFromTranslation ? I18nStore.wrapInBraces(text.text.trim()) : text.text.trim();
+                    const existingFallback: string = i18n.getFixedT(fallbackLng, text.ns)(text.key, fallbackText)
+                    if (existingFallback !== fallbackText) {
+                        console.log("detected translation change: ", existingFallback, fallbackText)
+                        onFallbackLanguageValueChange(fallbackLng, text.ns, text.key, fallbackText)
                     }
 
                     const details = i18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
-                    console.log(">>>>>>>.... details", text, details.res.length, details)
+                    console.log(">>>>>>>.... details", this.unwrapFromBraces(details.res), details, existingFallback)
                     const translationExists = details.usedLng === lng && details.res && details.res.length > 0;
                     if (translationExists) {
-                        return details.res;
+                        return I18nStore.unwrapFromBraces(details.res);
                     } else if (text.excludeFromTranslation && existingFallback.length > 0) {
-                        return existingFallback;
+                        return I18nStore.unwrapFromBraces(existingFallback);
                     }
 
                     return I18nStore.decorateUntranslated(lng, text, existingFallback);
@@ -133,6 +134,23 @@ export class I18nStore {
             }
         }
 
+    }
+
+    private static wrapInBraces(text: string): string {
+        if (text.length == 0) {
+            return text;
+        }
+        return `{${text}}`
+    }
+
+    private static unwrapFromBraces(text: string): string {
+        if (text.length == 0) {
+            return text;
+        }
+        if (text.startsWith("{") && text.endsWith("}")) {
+            return text.substring(1, text.length - 1);
+        }
+        return text;
     }
 
     private static decorateUntranslated(lng: string, text: NdTranslatedText, existingFallback: string) {

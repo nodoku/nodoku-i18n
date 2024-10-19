@@ -110,21 +110,28 @@ export class SimplelocalizeBackendApiClient {
 
     private static async loadTranslationsUsingApi(language: string, ns: string): Promise<LanguageNsTranslationResource> {
         console.log("querying the language ", language, " on namespace ", ns, "url", `${loadTranslationsApiBase}?namespace=${ns}&language=${language}`);
-        const resp = await fetch(`${loadTranslationsApiBase}?namespace=${ns}&language=${language}`, {
-            method: 'GET',
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-SimpleLocalize-Token': apiKey
-            },
-            cache: 'no-cache'
-        })
-        const reply = await resp.json();
+        let finished = false;
+        let page = 0;
         const translatedReply: LanguageNsTranslationResource = {};
-        reply.data.forEach((t: any) => {
-            translatedReply[t.key] = t.text;
-        });
-        console.log("translatedReply", language, ns, translatedReply)
+        while (!finished) {
+            const resp = await fetch(`${loadTranslationsApiBase}?namespace=${ns}&language=${language}&page=${page}`, {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-SimpleLocalize-Token': apiKey
+                },
+                cache: 'no-cache'
+            })
+            const reply = await resp.json();
+            reply.data.forEach((t: any) => {
+                translatedReply[t.key] = t.text;
+            });
+
+            page++;
+            finished = reply.data.length == 0;
+        }
+        // console.log("translatedReply", language, ns, translatedReply)
         return translatedReply;
     }
 
