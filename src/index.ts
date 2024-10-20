@@ -1,13 +1,11 @@
 import LanguageDefImpl from "./i18n/language-def-impl";
-import {NdTranslatedText} from "nodoku-core";
+import {I18nextProvider, NdTranslatedText} from "nodoku-core";
 import {I18nStore} from "./i18n/i18n-store";
 import {
     OnFallbackLngTextUpdateStrategyImpl,
     SimplelocalizeBackendApiClient
 } from "./i18n/simplelocalize/simplelocalize-backend-api-client";
-import {i18n} from "i18next";
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export namespace NodokuI18n {
 
@@ -17,42 +15,29 @@ export namespace NodokuI18n {
     export namespace Simplelocalize {
 
         export type OnFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
-        export const OnfallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
+        export const OnFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
 
-        export async function initI18nStore(lng: string,
-                                            nampespaces: readonly string[],
+        export async function initI18nStore(nampespaces: readonly string[],
                                             fallbackLng: string,
-                                            onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only): Promise<void> {
+                                            onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy
+                                                = OnFallbackLngTextUpdateStrategyImpl.reset_reviewed_status): Promise<void> {
 
-            const allLlngs = await allLanguages();
-            const all: i18n[] = [];
-            for (const lng of allLlngs) {
-                if (lng.key !== fallbackLng) {
-                    const i18n: i18n = await I18nStore.initStore(lng.key, nampespaces, fallbackLng,
-                            SimplelocalizeBackendApiClient.resourceLoader,
-                            SimplelocalizeBackendApiClient.missingKeyHandler);
+            const allLlngs = (await SimplelocalizeBackendApiClient.allLanguagesImpl()).map(l => l.key);
 
-                    all.push(i18n);
+            await I18nStore.initStore(allLlngs, nampespaces, fallbackLng,
+                onFallbackLngTextUpdateStrategy,
+                SimplelocalizeBackendApiClient.resourceLoader,
+                SimplelocalizeBackendApiClient.missingKeyHandler)
 
-                    await delay(100);
-                }
-            }
-
-            console.log("loaded i18n's :", all.map(i => {return {
-                lng: i.language,
-                loaded: i.hasLoadedNamespace(nampespaces)}}))
-
-            SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
-            setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000)
 
         }
 
 
-        export async function allLanguages(): Promise<LanguageDef[]> {
-            return SimplelocalizeBackendApiClient.allLanguagesImpl();
+        export const allLanguages = async (): Promise<LanguageDef[]> => {
+            return await SimplelocalizeBackendApiClient.allLanguagesImpl();
         }
 
-        export async function i18nForNodoku(lng: string): Promise<{t: (text: NdTranslatedText) => string}> {
+        export const i18nForNodoku: I18nextProvider = async (lng: string): Promise<{t: (text: NdTranslatedText) => string}> => {
             return I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange);
         }
 

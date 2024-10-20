@@ -36,69 +36,42 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { I18nStore } from "./i18n/i18n-store";
 import { OnFallbackLngTextUpdateStrategyImpl, SimplelocalizeBackendApiClient } from "./i18n/simplelocalize/simplelocalize-backend-api-client";
-var delay = function (ms) { return new Promise(function (res) { return setTimeout(res, ms); }); };
 export var NodokuI18n;
 (function (NodokuI18n) {
     var Simplelocalize;
     (function (Simplelocalize) {
-        Simplelocalize.OnfallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
-        function initI18nStore(lng_1, nampespaces_1, fallbackLng_1) {
-            return __awaiter(this, arguments, void 0, function (lng, nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy) {
-                var allLlngs, all, _i, allLlngs_1, lng_2, i18n;
-                if (onFallbackLngTextUpdateStrategy === void 0) { onFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only; }
+        var _this = this;
+        Simplelocalize.OnFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
+        function initI18nStore(nampespaces_1, fallbackLng_1) {
+            return __awaiter(this, arguments, void 0, function (nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy) {
+                var allLlngs;
+                if (onFallbackLngTextUpdateStrategy === void 0) { onFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl.reset_reviewed_status; }
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, allLanguages()];
+                        case 0: return [4 /*yield*/, SimplelocalizeBackendApiClient.allLanguagesImpl()];
                         case 1:
-                            allLlngs = _a.sent();
-                            all = [];
-                            _i = 0, allLlngs_1 = allLlngs;
-                            _a.label = 2;
+                            allLlngs = (_a.sent()).map(function (l) { return l.key; });
+                            return [4 /*yield*/, I18nStore.initStore(allLlngs, nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy, SimplelocalizeBackendApiClient.resourceLoader, SimplelocalizeBackendApiClient.missingKeyHandler)];
                         case 2:
-                            if (!(_i < allLlngs_1.length)) return [3 /*break*/, 6];
-                            lng_2 = allLlngs_1[_i];
-                            if (!(lng_2.key !== fallbackLng)) return [3 /*break*/, 5];
-                            return [4 /*yield*/, I18nStore.initStore(lng_2.key, nampespaces, fallbackLng, SimplelocalizeBackendApiClient.resourceLoader, SimplelocalizeBackendApiClient.missingKeyHandler)];
-                        case 3:
-                            i18n = _a.sent();
-                            all.push(i18n);
-                            return [4 /*yield*/, delay(100)];
-                        case 4:
                             _a.sent();
-                            _a.label = 5;
-                        case 5:
-                            _i++;
-                            return [3 /*break*/, 2];
-                        case 6:
-                            console.log("loaded i18n's :", all.map(function (i) {
-                                return {
-                                    lng: i.language,
-                                    loaded: i.hasLoadedNamespace(nampespaces)
-                                };
-                            }));
-                            SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
-                            setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000);
                             return [2 /*return*/];
                     }
                 });
             });
         }
         Simplelocalize.initI18nStore = initI18nStore;
-        function allLanguages() {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, SimplelocalizeBackendApiClient.allLanguagesImpl()];
-                });
+        Simplelocalize.allLanguages = function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, SimplelocalizeBackendApiClient.allLanguagesImpl()];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
             });
-        }
-        Simplelocalize.allLanguages = allLanguages;
-        function i18nForNodoku(lng) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange)];
-                });
+        }); };
+        Simplelocalize.i18nForNodoku = function (lng) { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange)];
             });
-        }
-        Simplelocalize.i18nForNodoku = i18nForNodoku;
+        }); };
     })(Simplelocalize = NodokuI18n.Simplelocalize || (NodokuI18n.Simplelocalize = {}));
 })(NodokuI18n || (NodokuI18n = {}));

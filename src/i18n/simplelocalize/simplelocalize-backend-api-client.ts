@@ -7,8 +7,14 @@ import {
     UpdatedKey
 } from "../i18n-store";
 import {Dictionary} from "../dictionary";
-import {NodokuI18n} from "../../index";
-import LanguageDef = NodokuI18n.LanguageDef;
+
+const runsOnServerSide = typeof window === 'undefined'
+
+if (!runsOnServerSide) {
+    throw new Error("this config is intended on server side only")
+}
+
+
 
 export const projectToken = process.env.SIMPLELOCALIZE_PROJECT_TOKEN;
 export const cdnBaseUrl = "https://cdn.simplelocalize.io";
@@ -27,7 +33,43 @@ interface UpdatingValue {
 }
 
 
+/*
+ * the strategy to undertake when there is a difference between the value provided in the content block, and the value
+ * recorded as the value of the fallback language.
+ *
+ * That the fallback language is by definition the language in which the content is written. Hence, for a given translation key,
+ * it is the value provided by the content, takes precedence.
+ *
+ * For the translation key, the translation corresponding to the fallback language should always be equal to the value
+ * provided by the content for the same translation key.
+ *
+ * Consequently, it may so happen that this equivalence doesn't hold anymore, when the content changes for a given
+ * translation key (markdown file content modified, for example).
+ *
+ * If such situation is detected, we should update the value of translation for the fallback language for the
+ * translation key concerned.
+ *
+ * When the translation value is updated, the corresponding translation on other languages may not correspond anymore
+ * to this new value.
+ *
+ * And in this case several strategies are possible:
+ *
+ * - update_fallback_lng_only:
+ *      update the value of the translation for fallback language, and stop there, don't do anything else
+ *
+ * - delete_translations:
+ *      * update the value of the translation for fallback language
+ *      * delete translations (if present) for other languages, thus indicating that the new translations should be provided
+ *
+ * - reset_reviewed_status:
+ *      * update the value of the translation for fallback language
+ *      * remove the REVIEWED flag from the translations for other languages
+ *
+ * Which strategy to use is up to the user of the library to choose.
+ * By default, strategy 'reset_reviewed_status' is used
+ */
 export enum OnFallbackLngTextUpdateStrategyImpl {
+
     update_fallback_lng_only,
     delete_translations,
     reset_reviewed_status
@@ -78,7 +120,7 @@ export class SimplelocalizeBackendApiClient {
             /*
              * by checking the presence of the key we ensure that only the first update will be taken into account
              * here we rely on the fact that the fallback lng translation is queried first
-             * see i18nForNodokuImpl for details, when i18n.getFixedT is called prior to i18n.t
+             * see I18nStore.i18nForNodokuImpl for details, when i18n.getFixedT is called prior to i18n.t
              */
             if (!SimplelocalizeBackendApiClient.missingKeysRequests.has(missingKey)) {
                 SimplelocalizeBackendApiClient.missingKeysRequests.set(missingKey, fallbackValue);
@@ -180,9 +222,12 @@ export class SimplelocalizeBackendApiClient {
             }
         }
 
+        if (shoulReload) {
+            await I18nStore.reloadResources();
+            console.log("resources reloaded...")
+        }
+
     }
-
-
 
     private static async pushKeys(reqs: UpdatedKey[]): Promise<void> {
         const requestBodyKeys = {
@@ -238,7 +283,7 @@ export class SimplelocalizeBackendApiClient {
             translations: []
         }
 
-        const allLanguages: LanguageDef[] = await SimplelocalizeBackendApiClient.allLanguagesImpl();
+        const allLanguages: LanguageDefImpl[] = await SimplelocalizeBackendApiClient.allLanguagesImpl();
 
         reqs.forEach(r => {
 
@@ -249,7 +294,7 @@ export class SimplelocalizeBackendApiClient {
                         language: lng.key,
                         namespace: r.updKey.namespace,
                         key: r.updKey.key,
-                        text: I18nStore.translate(/*li18n.languages[0]*/lng.key, r.updKey.namespace, r.updKey.key),
+                        text: I18nStore.translate(lng.key, r.updKey.namespace, r.updKey.key),
                         reviewStatus: "NOT_REVIEWED"
                     })
                 })
