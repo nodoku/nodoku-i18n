@@ -1,3 +1,5 @@
+// import i18next, {Resource} from "i18next";
+// import {initReactI18next, useTranslation} from "react-i18next";
 // import resourcesToBackend from "i18next-resources-to-backend";
 // import {getOptions} from "./settings";
 var runsOnServerSide = typeof window === 'undefined';
@@ -32,3 +34,4 @@ export var environment = "_latest"; // or "_production"
 //
 //     return useTranslation(ns, getOptions(lng, ns, 'en'/*, languages*/));
 // }
+//# sourceMappingURL=client-i18n-conf.js.map
