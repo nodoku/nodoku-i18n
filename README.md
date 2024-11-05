@@ -56,7 +56,7 @@ See below for more details.
 
 ## Installing Nodoku localization
 
-The installation is straightforward:
+The installation of the nodoku-i18n library is straightforward:
 
 ```shell
 npm install nodoku-core nodoku-i18n

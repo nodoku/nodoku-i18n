@@ -48,9 +48,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 import { I18nStore } from "../i18n-store";
 import { Dictionary } from "../dictionary";
 var runsOnServerSide = typeof window === 'undefined';
-if (!runsOnServerSide) {
-    throw new Error("this config is intended on server side only");
-}
+// if (!runsOnServerSide) {
+//     throw new Error("this config is intended on server side only")
+// }
 export var projectToken = process.env.SIMPLELOCALIZE_PROJECT_TOKEN;
 export var cdnBaseUrl = "https://cdn.simplelocalize.io";
 export var environment = "_latest"; // or "_production"
@@ -132,39 +132,62 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
         var missingKey = { language: language, namespace: namespace, key: key };
         SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.set(missingKey, text);
     };
-    SimplelocalizeBackendApiClient.loadTranslationsUsingCdn = function (language, ns) {
+    SimplelocalizeBackendApiClient.loadTranslationsUsingCdn = function (allLng, allNs) {
         return __awaiter(this, void 0, void 0, function () {
-            var resp, reply;
+            var res;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("querying the language on CDN", language, " on namespace ", ns, "url", "".concat(loadPathBase, "/").concat(language, "/").concat(ns));
-                        return [4 /*yield*/, fetch("".concat(loadPathBase, "/").concat(language, "/").concat(ns))];
+                        res = {};
+                        return [4 /*yield*/, Promise.all(allLng.map(function (language) { return __awaiter(_this, void 0, void 0, function () {
+                                var _this = this;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, Promise.all(allNs.map(function (ns) { return __awaiter(_this, void 0, void 0, function () {
+                                                var resp, reply;
+                                                return __generator(this, function (_a) {
+                                                    switch (_a.label) {
+                                                        case 0:
+                                                            console.log("querying the language on CDN", language, " on namespace ", ns, "url", "".concat(loadPathBase, "/").concat(language, "/").concat(ns));
+                                                            return [4 /*yield*/, fetch("".concat(loadPathBase, "/").concat(language, "/").concat(ns))];
+                                                        case 1:
+                                                            resp = _a.sent();
+                                                            return [4 /*yield*/, resp.json()];
+                                                        case 2:
+                                                            reply = _a.sent();
+                                                            console.log("this is reply", language, ns, reply);
+                                                            return [2 /*return*/, reply];
+                                                    }
+                                                });
+                                            }); }))];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); }))];
                     case 1:
-                        resp = _a.sent();
-                        return [4 /*yield*/, resp.json()];
-                    case 2:
-                        reply = _a.sent();
-                        console.log("this is reply", language, ns, reply);
-                        return [2 /*return*/, reply];
+                        _a.sent();
+                        return [2 /*return*/, res];
                 }
             });
         });
     };
-    SimplelocalizeBackendApiClient.loadTranslationsUsingApi = function (language, ns) {
+    SimplelocalizeBackendApiClient.loadTranslationsUsingApi = function (allLng, allNs) {
         return __awaiter(this, void 0, void 0, function () {
             var finished, page, translatedReply, resp, reply;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("querying the language ", language, " on namespace ", ns, "url", "".concat(loadTranslationsApiBase, "?namespace=").concat(ns, "&language=").concat(language));
+                        console.log("querying the language ", allLng, " on namespace ", allNs, "url", "".concat(loadTranslationsApiBase));
                         finished = false;
                         page = 0;
                         translatedReply = {};
                         _a.label = 1;
                     case 1:
                         if (!!finished) return [3 /*break*/, 4];
-                        return [4 /*yield*/, fetch("".concat(loadTranslationsApiBase, "?namespace=").concat(ns, "&language=").concat(language, "&page=").concat(page), {
+                        return [4 /*yield*/, fetch("".concat(loadTranslationsApiBase, "?page=").concat(page), {
                                 method: 'GET',
                                 mode: 'cors',
                                 headers: {
@@ -179,14 +202,34 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
                     case 3:
                         reply = _a.sent();
                         reply.data.forEach(function (t) {
-                            translatedReply[t.key] = t.text;
+                            var key = t.key;
+                            var namespace = t.namespace;
+                            var language = t.language;
+                            var text = t.text;
+                            if (!translatedReply.hasOwnProperty(language)) {
+                                translatedReply[language] = {};
+                            }
+                            if (!translatedReply[language].hasOwnProperty(namespace)) {
+                                translatedReply[language][namespace] = {};
+                            }
+                            translatedReply[language][namespace][key] = text;
                         });
                         page++;
                         finished = reply.data.length == 0;
                         return [3 /*break*/, 1];
-                    case 4: 
-                    // console.log("translatedReply", language, ns, translatedReply)
-                    return [2 /*return*/, translatedReply];
+                    case 4:
+                        allLng.forEach(function (lng) {
+                            if (!translatedReply.hasOwnProperty(lng)) {
+                                translatedReply[lng] = {};
+                            }
+                            allNs.forEach(function (ns) {
+                                if (!translatedReply[lng].hasOwnProperty(ns)) {
+                                    translatedReply[lng][ns] = {};
+                                }
+                            });
+                        });
+                        // console.log("_______translatedReply_______", allLng, allNs, translatedReply)
+                        return [2 /*return*/, translatedReply];
                 }
             });
         });
@@ -364,7 +407,6 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
                         return [4 /*yield*/, resp.json()];
                     case 3:
                         json = _a.sent();
-                        console.log("updated translations", requestBodyTranslations, JSON.stringify(json));
                         return [2 /*return*/];
                 }
             });
@@ -424,8 +466,7 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
     SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated = new Dictionary();
     SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only;
     SimplelocalizeBackendApiClient.missingKeyHandler = function (lngs, ns, key, fallbackValue, updateMissing, options) {
-        var _a;
-        console.log("received missing key: ", lngs, ns, key, fallbackValue, (_a = I18nStore.getI18nByLangByNs('ru')) === null || _a === void 0 ? void 0 : _a.store.data);
+        console.log("received missing key: ", lngs, ns, key, fallbackValue /*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
         lngs.forEach(function (lng) {
             var missingKey = { language: lng, namespace: ns, key: key };
             /*

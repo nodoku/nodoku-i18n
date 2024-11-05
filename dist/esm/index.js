@@ -51,6 +51,7 @@ export var NodokuI18n;
                         case 0: return [4 /*yield*/, SimplelocalizeBackendApiClient.allLanguagesImpl()];
                         case 1:
                             allLlngs = (_a.sent()).map(function (l) { return l.key; });
+                            console.log("in initI18nStore allLlngs", allLlngs);
                             return [4 /*yield*/, I18nStore.initStore(allLlngs, nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy, SimplelocalizeBackendApiClient.resourceLoader, SimplelocalizeBackendApiClient.missingKeyHandler)];
                         case 2:
                             _a.sent();

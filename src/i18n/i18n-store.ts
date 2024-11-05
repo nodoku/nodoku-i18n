@@ -15,6 +15,11 @@ export type LanguageTranslationResource = { [key: string]: {
     }
 };
 
+export type AllLanguagesAllNamespacesTranslationResource = { [key: string]: {
+        [key: string]: LanguageTranslationResource;
+    }
+};
+
 export type UpdatedKey = {language: string; namespace: string; key: string}
 
 export type MissingKeyHandler = (lngs: readonly string[],
@@ -26,41 +31,27 @@ export type MissingKeyHandler = (lngs: readonly string[],
 
 export type FallbackLanguageValueChangeHandler = (language: string, namespace: string, key: string, text: string) => void;
 
-export type TranslationResourceLoader = (lng: string, ns: string) => Promise<LanguageNsTranslationResource>;
+export type TranslationResourceLoader = (allLng: readonly string[], allNs: readonly string[]) => Promise<AllLanguagesAllNamespacesTranslationResource>;
 
 export class I18nStore {
 
-    private static i18nByLang: Map<string, i18n> = new Map();
+    private static sharedI18n: i18n | undefined = undefined;
 
-    static getI18nByLangByNs(lng: string): i18n | undefined {
-        return I18nStore.i18nByLang.get(lng);
-    }
 
-    static getAllI18n(): i18n[] {
-        return Array.from(I18nStore.i18nByLang.values())
-    }
-
-    static async initStore(allLlngs: readonly string[],
+    static async initStore(allLngs: readonly string[],
                            nampespaces: readonly string[],
                            fallbackLng: string,
                            onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl,
                            resourceLoader: TranslationResourceLoader,
-                           missingKeyHandler: MissingKeyHandler) {
+                           missingKeyHandler: MissingKeyHandler): Promise<void> {
 
-
-        for (const lng of allLlngs) {
-            if (lng !== fallbackLng) {
-                await I18nStore.initStoreForLng(lng, nampespaces, fallbackLng,
-                    resourceLoader,
-                    missingKeyHandler);
-            }
+        if (this.sharedI18n != undefined) {
+            return;
         }
 
-        await I18nStore.reloadResources();
+        this.sharedI18n = await I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, resourceLoader, missingKeyHandler);
 
-        console.log("loaded i18n's :", Array.from(I18nStore.i18nByLang.values()).map((i: i18n) => {return {
-            lng: i.language,
-            loaded: i.hasLoadedNamespace(nampespaces)}}))
+        await I18nStore.reloadResources();
 
         SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
         setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000)
@@ -68,121 +59,86 @@ export class I18nStore {
 
     }
 
-    private static async initStoreForLng(lng: string, nampespaces: readonly string[], fallbackLng: string,
-                           resourceLoader: TranslationResourceLoader,
-                           missingKeyHandler: MissingKeyHandler): Promise<void> {
-
-        if (I18nStore.i18nByLang.has(lng)) {
-            return;
-        }
-
-        const i18n = await I18nStore.createAndInitI18next(lng, nampespaces, fallbackLng, resourceLoader, missingKeyHandler);
-
-        console.log("loaded i18n", lng/*, i18n.store.data*/)
-
-        I18nStore.i18nByLang.set(lng, i18n);
-
-    }
-
-    private static async createAndInitI18next(lng: string, namespaces: readonly string[], fallbackLng: string,
-                                     translationToResource: TranslationResourceLoader,
-                                     missingKeyHandler: MissingKeyHandler): Promise<i18n> {
+    private static async createAndInitI18next(allLngs: readonly string[],
+                                              namespaces: readonly string[],
+                                              fallbackLng: string,
+                                              translationToResource: TranslationResourceLoader,
+                                              missingKeyHandler: MissingKeyHandler): Promise<i18n> {
 
         const i18nInstance: i18n = createInstance()
-        const options = await I18nStore.createOptions(lng, namespaces, fallbackLng, translationToResource, missingKeyHandler);
+        const options = await I18nStore.createOptions(allLngs, namespaces, fallbackLng, translationToResource, missingKeyHandler);
         await i18nInstance.init(options)
-        return i18nInstance
+        i18nInstance.languages = allLngs;
+        return i18nInstance;
     }
 
 
     public static async reloadResources() {
 
-        for (const i18n of Array.from(I18nStore.i18nByLang.values())) {
+        if (this.sharedI18n) {
 
-            const options = i18n.options;//await I18nStore.createOptions(lng, namespaces, fallbackLng, translationToResource, missingKeyHandler);
-            const lng = i18n.languages[0];
+            const options = this.sharedI18n.options;//await I18nStore.createOptions(lng, namespaces, fallbackLng, translationToResource, missingKeyHandler);
             const namespaces = Array.isArray(options.ns) ? options.ns || [] : [options.ns];
             const fallbackLng: string = Array.isArray(options.fallbackLng) ? options.fallbackLng[0] : options.fallbackLng;
             const translationToResource = (options as {translationToResource: TranslationResourceLoader}).translationToResource;
 
-            options.resources = await this.loadTranslations(lng, namespaces, fallbackLng, translationToResource);
-            await i18n.init(options)
+            options.resources = await translationToResource(this.sharedI18n.languages, namespaces);//this.loadTranslations(this.sharedI18n.languages, namespaces/*, fallbackLng*/, translationToResource);
+            await this.sharedI18n.init(options)
 
-            console.log("loaded translation resources for ", lng, fallbackLng)
+            console.log("loaded translation resources for ", this.sharedI18n.languages, fallbackLng)
 
-            await delay(100);
         }
-
 
     }
 
-
-
-    private static async loadTranslations(lng: string,
-                                          namespaces: readonly string[],
-                                          fallbackLng: string,
-                                          translationToResource: TranslationResourceLoader): Promise<LanguageTranslationResource> {
-        const languageTranslationResource: LanguageTranslationResource = {};
-
-        for (const ns of namespaces) {
-            languageTranslationResource[lng] = {};
-            languageTranslationResource[lng][ns] = await translationToResource(lng, ns)
-            languageTranslationResource[fallbackLng] = {};
-            languageTranslationResource[fallbackLng][ns] = await translationToResource(fallbackLng, ns)
-        }
-
-        return languageTranslationResource;
-    }
-
-    private static async createOptions(lng: string, namespaces: readonly string[], fallbackLng: string,
+    private static async createOptions(allLngs: readonly string[],
+                                       namespaces: readonly string[],
+                                       fallbackLng: string,
                                        translationToResource: TranslationResourceLoader,
                                        missingKeyHandler: MissingKeyHandler): Promise<InitOptions & {translationToResource: TranslationResourceLoader}> {
 
 
         return {
             // debug: true,
-            // supportedLngs: languages,
             resources: {},
             fallbackLng: fallbackLng,
-            supportedLngs: [fallbackLng, lng],
-            lng,
+            supportedLngs: allLngs,
             ns: namespaces,
-            saveMissing: true,//fallbackLng === lng,
+            saveMissing: true,
+            preload: false,
+            updateMissing: false,
             translationToResource: translationToResource,
             missingKeyHandler: missingKeyHandler
         }
     }
 
     static translate(lng: string, ns: string, key: string): string {
-        const i18n = I18nStore.i18nByLang.get(lng);
-        if (!i18n) {
+        if (!this.sharedI18n) {
             return "translation n/a";
         }
-        const t = i18n.getFixedT(lng, ns)
-        return t(key);
+        return this.sharedI18n.getFixedT(lng, ns)(key);
     }
 
-    private static translateNdTranslatedText(lng: string,
+    private static translateTranslatableText(lng: string,
                                              onFallbackLanguageValueChange: FallbackLanguageValueChangeHandler,
                                              text: NdTranslatedText, ): string {
 
-        const i18n: i18n | undefined = I18nStore.getI18nByLangByNs(lng);
-        if (i18n) {
+        if (this.sharedI18n) {
 
-            const fallbackLng: string = Array.isArray(i18n.options.fallbackLng) ? i18n.options.fallbackLng[0] : i18n.options.fallbackLng;
+            const fallbackLng: string = Array.isArray(this.sharedI18n.options.fallbackLng) ? this.sharedI18n.options.fallbackLng[0] : this.sharedI18n.options.fallbackLng;
 
             /*
              * make sure the fallback lng translation is intercepted by the missing key handler and eventually written to backend
              */
             const fallbackText = text.excludeFromTranslation ? I18nStore.wrapInBraces(text.text.trim()) : text.text.trim();
-            const existingFallback: string = i18n.getFixedT(fallbackLng, text.ns)(text.key, fallbackText)
+            const existingFallback: string = this.sharedI18n.getFixedT(fallbackLng, text.ns)(text.key, fallbackText)
 
             if (existingFallback !== fallbackText) {
                 console.log("detected translation change: ", existingFallback, fallbackText)
                 onFallbackLanguageValueChange(fallbackLng, text.ns, text.key, fallbackText)
             }
 
-            const details = i18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
+            const details = this.sharedI18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
             // console.log(">>>>>>>.... details", this.unwrapFromBraces(details.res), details, existingFallback)
             const translationExists = details.usedLng === lng && details.res && details.res.length > 0;
             if (translationExists) {
@@ -202,7 +158,7 @@ export class I18nStore {
         Promise<{t: (text: NdTranslatedText) => string}> {
 
         return {
-            t: (text: NdTranslatedText) => I18nStore.translateNdTranslatedText(lng, fallbackLanguageValueChangeHandler, text)
+            t: (text: NdTranslatedText) => I18nStore.translateTranslatableText(lng, fallbackLanguageValueChangeHandler, text)
         }
 
     }

@@ -1,7 +1,7 @@
 import LanguageDefImpl from "../language-def-impl";
 import {
+    AllLanguagesAllNamespacesTranslationResource,
     I18nStore,
-    LanguageNsTranslationResource,
     MissingKeyHandler,
     TranslationResourceLoader,
     UpdatedKey
@@ -10,9 +10,9 @@ import {Dictionary} from "../dictionary";
 
 const runsOnServerSide = typeof window === 'undefined'
 
-if (!runsOnServerSide) {
-    throw new Error("this config is intended on server side only")
-}
+// if (!runsOnServerSide) {
+//     throw new Error("this config is intended on server side only")
+// }
 
 
 
@@ -112,7 +112,7 @@ export class SimplelocalizeBackendApiClient {
                                                           updateMissing: boolean,
                                                           options: any): void => {
 
-        console.log("received missing key: ", lngs, ns, key, fallbackValue, I18nStore.getI18nByLangByNs('ru')?.store.data);
+        console.log("received missing key: ", lngs, ns, key, fallbackValue/*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
 
         lngs.forEach((lng) => {
 
@@ -142,21 +142,30 @@ export class SimplelocalizeBackendApiClient {
         SimplelocalizeBackendApiClient.loadTranslationsUsingApi :
         SimplelocalizeBackendApiClient.loadTranslationsUsingCdn;
 
-    private static async loadTranslationsUsingCdn(language: string, ns: string): Promise<LanguageNsTranslationResource> {
-        console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${loadPathBase}/${language}/${ns}`);
-        const resp = await fetch(`${loadPathBase}/${language}/${ns}`);
-        const reply = await resp.json();
-        console.log("this is reply", language, ns, reply);
-        return reply;
+    private static async loadTranslationsUsingCdn(allLng: readonly string[], allNs: readonly string[]): Promise<AllLanguagesAllNamespacesTranslationResource> {
+
+        const res: AllLanguagesAllNamespacesTranslationResource = {};
+
+        await Promise.all(allLng.map(async (language: string): Promise<void> => {
+            await Promise.all(allNs.map(async (ns: string): Promise<void> => {
+                console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${loadPathBase}/${language}/${ns}`);
+                const resp = await fetch(`${loadPathBase}/${language}/${ns}`);
+                const reply = await resp.json();
+                console.log("this is reply", language, ns, reply);
+                return reply;
+            }))
+        }))
+
+        return res;
     }
 
-    private static async loadTranslationsUsingApi(language: string, ns: string): Promise<LanguageNsTranslationResource> {
-        console.log("querying the language ", language, " on namespace ", ns, "url", `${loadTranslationsApiBase}?namespace=${ns}&language=${language}`);
+    private static async loadTranslationsUsingApi(allLng: readonly string[], allNs: readonly string[]): Promise<AllLanguagesAllNamespacesTranslationResource> {
+        console.log("querying the language ", allLng, " on namespace ", allNs, "url", `${loadTranslationsApiBase}`);
         let finished = false;
         let page = 0;
-        const translatedReply: LanguageNsTranslationResource = {};
+        const translatedReply: AllLanguagesAllNamespacesTranslationResource = {};
         while (!finished) {
-            const resp = await fetch(`${loadTranslationsApiBase}?namespace=${ns}&language=${language}&page=${page}`, {
+            const resp = await fetch(`${loadTranslationsApiBase}?page=${page}`, {
                 method: 'GET',
                 mode: 'cors',
                 headers: {
@@ -167,13 +176,36 @@ export class SimplelocalizeBackendApiClient {
             })
             const reply = await resp.json();
             reply.data.forEach((t: any) => {
-                translatedReply[t.key] = t.text;
+                const key = t.key;
+                const namespace = t.namespace;
+                const language = t.language;
+                const text = t.text;
+
+                if (!translatedReply.hasOwnProperty(language)) {
+                    translatedReply[language] = {};
+                }
+                if (!translatedReply[language].hasOwnProperty(namespace)) {
+                    translatedReply[language][namespace] = {}
+                }
+                translatedReply[language][namespace][key] = text;
             });
 
             page++;
             finished = reply.data.length == 0;
         }
-        // console.log("translatedReply", language, ns, translatedReply)
+
+        allLng.forEach(lng => {
+            if (!translatedReply.hasOwnProperty(lng)) {
+                translatedReply[lng] = {};
+            }
+            allNs.forEach(ns => {
+                if (!translatedReply[lng].hasOwnProperty(ns)) {
+                    translatedReply[lng][ns] = {};
+                }
+            })
+        })
+
+        // console.log("_______translatedReply_______", allLng, allNs, translatedReply)
         return translatedReply;
     }
 
@@ -312,7 +344,7 @@ export class SimplelocalizeBackendApiClient {
             body: JSON.stringify(requestBodyTranslations),
         })
         const json = await resp.json();
-        console.log("updated translations", requestBodyTranslations, JSON.stringify(json));
+        // console.log("updated translations", requestBodyTranslations, JSON.stringify(json));
 
     }
 

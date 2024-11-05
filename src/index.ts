@@ -24,7 +24,10 @@ export namespace NodokuI18n {
 
             const allLlngs = (await SimplelocalizeBackendApiClient.allLanguagesImpl()).map(l => l.key);
 
-            await I18nStore.initStore(allLlngs, nampespaces, fallbackLng,
+            console.log("in initI18nStore allLlngs", allLlngs)
+
+            await I18nStore.initStore(allLlngs,
+                nampespaces, fallbackLng,
                 onFallbackLngTextUpdateStrategy,
                 SimplelocalizeBackendApiClient.resourceLoader,
                 SimplelocalizeBackendApiClient.missingKeyHandler)

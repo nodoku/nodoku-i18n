@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/esm/index.js"
+      "types": "./types/index.d.ts",
+      "import": "./esm/index.js"
     },
     "./package.json": "./package.json"
   },
-  "module": "dist/esm/index.js",
-  "types": "dist/types/index.d.ts",
+  "module": "./esm/index.js",
+  "types": "./types/index.d.ts",
   "files": [
-    "dist"
+    "./"
   ],
   "type": "module",
   "dependencies": {
@@ -22,7 +22,7 @@
     "eslint-config-next": "14.2.3",
     "i18next": "^23.11.5",
     "next": "14.2.10",
-    "nodoku-core": "../nodoku-core/dist",
+    "nodoku-core": "../../nodoku-core/dist",
     "typescript": "^5"
   },
   "devDependencies": {
@@ -34,8 +34,5 @@
     "eslint-config-next": "14.2.3",
     "shx": "^0.3.4",
     "typescript": "^5"
-  },
-  "scripts": {
-    "dist": "shx rm -rf dist && tsc && shx cp ./package-dist.json ./dist/package.json"
   }
 }
