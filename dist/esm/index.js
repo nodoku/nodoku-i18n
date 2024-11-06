@@ -42,8 +42,8 @@ export var NodokuI18n;
     (function (Simplelocalize) {
         var _this = this;
         Simplelocalize.OnFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
-        function initI18nStore(nampespaces_1, fallbackLng_1) {
-            return __awaiter(this, arguments, void 0, function (nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy) {
+        function initI18nStore(nampespaces_1, fallbackLng_1, saveMissing_1) {
+            return __awaiter(this, arguments, void 0, function (nampespaces, fallbackLng, saveMissing, onFallbackLngTextUpdateStrategy) {
                 var allLlngs;
                 if (onFallbackLngTextUpdateStrategy === void 0) { onFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl.reset_reviewed_status; }
                 return __generator(this, function (_a) {
@@ -52,7 +52,7 @@ export var NodokuI18n;
                         case 1:
                             allLlngs = (_a.sent()).map(function (l) { return l.key; });
                             console.log("in initI18nStore allLlngs", allLlngs);
-                            return [4 /*yield*/, I18nStore.initStore(allLlngs, nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy, SimplelocalizeBackendApiClient.resourceLoader, SimplelocalizeBackendApiClient.missingKeyHandler)];
+                            return [4 /*yield*/, I18nStore.initStore(allLlngs, nampespaces, fallbackLng, saveMissing, onFallbackLngTextUpdateStrategy, SimplelocalizeBackendApiClient.resourceLoader, SimplelocalizeBackendApiClient.missingKeyHandler)];
                         case 2:
                             _a.sent();
                             return [2 /*return*/];

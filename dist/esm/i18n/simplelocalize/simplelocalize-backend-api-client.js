@@ -48,9 +48,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 import { I18nStore } from "../i18n-store";
 import { Dictionary } from "../dictionary";
 var runsOnServerSide = typeof window === 'undefined';
-// if (!runsOnServerSide) {
-//     throw new Error("this config is intended on server side only")
-// }
+if (!runsOnServerSide) {
+    // throw new Error("this config is intended on server side only")
+    console.log(new Error("this config is intended on server side only"));
+}
+"use server";
 export var projectToken = process.env.SIMPLELOCALIZE_PROJECT_TOKEN;
 export var cdnBaseUrl = "https://cdn.simplelocalize.io";
 export var environment = "_latest"; // or "_production"
@@ -106,7 +108,7 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
             var resp, _a, _b;
             return __generator(this, function (_c) {
                 switch (_c.label) {
-                    case 0: return [4 /*yield*/, fetch("".concat(loadPathBase, "/_languages"))];
+                    case 0: return [4 /*yield*/, fetch("".concat(loadPathBase, "/_languages") /*, {cache: "force-cache"}*/)];
                     case 1:
                         resp = _c.sent();
                         if (!!resp.ok) return [3 /*break*/, 3];

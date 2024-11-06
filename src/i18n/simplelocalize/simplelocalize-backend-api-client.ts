@@ -10,9 +10,10 @@ import {Dictionary} from "../dictionary";
 
 const runsOnServerSide = typeof window === 'undefined'
 
-// if (!runsOnServerSide) {
-//     throw new Error("this config is intended on server side only")
-// }
+if (!runsOnServerSide) {
+    // throw new Error("this config is intended on server side only")
+    console.log(new Error("this config is intended on server side only"))
+}
 
 
 
@@ -88,7 +89,7 @@ export class SimplelocalizeBackendApiClient {
 
 
     static async allLanguagesImpl(): Promise<LanguageDefImpl[]> {
-        const resp = await fetch(`${loadPathBase}/_languages`);
+        const resp = await fetch(`${loadPathBase}/_languages`/*, {cache: "force-cache"}*/);
         if (!resp.ok) {
             throw new Error("can't load languages: " + resp.status + ", " + (await resp.text()));
         }

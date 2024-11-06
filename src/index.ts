@@ -19,6 +19,7 @@ export namespace NodokuI18n {
 
         export async function initI18nStore(nampespaces: readonly string[],
                                             fallbackLng: string,
+                                            saveMissing: boolean,
                                             onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy
                                                 = OnFallbackLngTextUpdateStrategyImpl.reset_reviewed_status): Promise<void> {
 
@@ -27,7 +28,7 @@ export namespace NodokuI18n {
             console.log("in initI18nStore allLlngs", allLlngs)
 
             await I18nStore.initStore(allLlngs,
-                nampespaces, fallbackLng,
+                nampespaces, fallbackLng, saveMissing,
                 onFallbackLngTextUpdateStrategy,
                 SimplelocalizeBackendApiClient.resourceLoader,
                 SimplelocalizeBackendApiClient.missingKeyHandler)

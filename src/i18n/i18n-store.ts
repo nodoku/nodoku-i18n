@@ -41,17 +41,18 @@ export class I18nStore {
     static async initStore(allLngs: readonly string[],
                            nampespaces: readonly string[],
                            fallbackLng: string,
+                           saveMissing: boolean,
                            onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl,
                            resourceLoader: TranslationResourceLoader,
                            missingKeyHandler: MissingKeyHandler): Promise<void> {
 
-        if (this.sharedI18n != undefined) {
-            return;
-        }
+        // if (this.sharedI18n != undefined) {
+        //     return;
+        // }
 
-        this.sharedI18n = await I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, resourceLoader, missingKeyHandler);
+        this.sharedI18n = await I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, resourceLoader, missingKeyHandler);
 
-        await I18nStore.reloadResources();
+        // await I18nStore.reloadResources();
 
         SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
         setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000)
@@ -62,11 +63,12 @@ export class I18nStore {
     private static async createAndInitI18next(allLngs: readonly string[],
                                               namespaces: readonly string[],
                                               fallbackLng: string,
+                                              saveMissing: boolean,
                                               translationToResource: TranslationResourceLoader,
                                               missingKeyHandler: MissingKeyHandler): Promise<i18n> {
 
         const i18nInstance: i18n = createInstance()
-        const options = await I18nStore.createOptions(allLngs, namespaces, fallbackLng, translationToResource, missingKeyHandler);
+        const options = await I18nStore.createOptions(allLngs, namespaces, fallbackLng, saveMissing, translationToResource, missingKeyHandler);
         await i18nInstance.init(options)
         i18nInstance.languages = allLngs;
         return i18nInstance;
@@ -94,6 +96,7 @@ export class I18nStore {
     private static async createOptions(allLngs: readonly string[],
                                        namespaces: readonly string[],
                                        fallbackLng: string,
+                                       saveMissing: boolean,
                                        translationToResource: TranslationResourceLoader,
                                        missingKeyHandler: MissingKeyHandler): Promise<InitOptions & {translationToResource: TranslationResourceLoader}> {
 
@@ -103,8 +106,9 @@ export class I18nStore {
             resources: {},
             fallbackLng: fallbackLng,
             supportedLngs: allLngs,
+            lng: fallbackLng,
             ns: namespaces,
-            saveMissing: true,
+            saveMissing: saveMissing,
             preload: false,
             updateMissing: false,
             translationToResource: translationToResource,

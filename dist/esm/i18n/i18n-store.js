@@ -40,22 +40,23 @@ var delay = function (ms) { return new Promise(function (res) { return setTimeou
 var I18nStore = /** @class */ (function () {
     function I18nStore() {
     }
-    I18nStore.initStore = function (allLngs, nampespaces, fallbackLng, onFallbackLngTextUpdateStrategy, resourceLoader, missingKeyHandler) {
+    I18nStore.initStore = function (allLngs, nampespaces, fallbackLng, saveMissing, onFallbackLngTextUpdateStrategy, resourceLoader, missingKeyHandler) {
         return __awaiter(this, void 0, void 0, function () {
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (this.sharedI18n != undefined) {
-                            return [2 /*return*/];
-                        }
+                        // if (this.sharedI18n != undefined) {
+                        //     return;
+                        // }
                         _a = this;
-                        return [4 /*yield*/, I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, resourceLoader, missingKeyHandler)];
+                        return [4 /*yield*/, I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, resourceLoader, missingKeyHandler)];
                     case 1:
+                        // if (this.sharedI18n != undefined) {
+                        //     return;
+                        // }
                         _a.sharedI18n = _b.sent();
-                        return [4 /*yield*/, I18nStore.reloadResources()];
-                    case 2:
-                        _b.sent();
+                        // await I18nStore.reloadResources();
                         SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
                         setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000);
                         return [2 /*return*/];
@@ -63,14 +64,14 @@ var I18nStore = /** @class */ (function () {
             });
         });
     };
-    I18nStore.createAndInitI18next = function (allLngs, namespaces, fallbackLng, translationToResource, missingKeyHandler) {
+    I18nStore.createAndInitI18next = function (allLngs, namespaces, fallbackLng, saveMissing, translationToResource, missingKeyHandler) {
         return __awaiter(this, void 0, void 0, function () {
             var i18nInstance, options;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         i18nInstance = createInstance();
-                        return [4 /*yield*/, I18nStore.createOptions(allLngs, namespaces, fallbackLng, translationToResource, missingKeyHandler)];
+                        return [4 /*yield*/, I18nStore.createOptions(allLngs, namespaces, fallbackLng, saveMissing, translationToResource, missingKeyHandler)];
                     case 1:
                         options = _a.sent();
                         return [4 /*yield*/, i18nInstance.init(options)];
@@ -107,7 +108,7 @@ var I18nStore = /** @class */ (function () {
             });
         });
     };
-    I18nStore.createOptions = function (allLngs, namespaces, fallbackLng, translationToResource, missingKeyHandler) {
+    I18nStore.createOptions = function (allLngs, namespaces, fallbackLng, saveMissing, translationToResource, missingKeyHandler) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 return [2 /*return*/, {
@@ -115,10 +116,11 @@ var I18nStore = /** @class */ (function () {
                         resources: {},
                         fallbackLng: fallbackLng,
                         supportedLngs: allLngs,
+                        lng: fallbackLng,
                         ns: namespaces,
-                        saveMissing: true,
-                        preload: false,
-                        updateMissing: false,
+                        saveMissing: saveMissing,
+                        // preload: false,
+                        // updateMissing: false,
                         translationToResource: translationToResource,
                         missingKeyHandler: missingKeyHandler
                     }];

@@ -6,7 +6,7 @@ export declare namespace NodokuI18n {
     namespace Simplelocalize {
         type OnFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
         const OnFallbackLngTextUpdateStrategy: typeof OnFallbackLngTextUpdateStrategyImpl;
-        function initI18nStore(nampespaces: readonly string[], fallbackLng: string, onFallbackLngTextUpdateStrategy?: OnFallbackLngTextUpdateStrategy): Promise<void>;
+        function initI18nStore(nampespaces: readonly string[], fallbackLng: string, saveMissing: boolean, onFallbackLngTextUpdateStrategy?: OnFallbackLngTextUpdateStrategy): Promise<void>;
         const allLanguages: () => Promise<LanguageDef[]>;
         const i18nForNodoku: I18nextProvider;
     }
