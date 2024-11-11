@@ -1,6 +1,6 @@
-import LanguageDefImpl from "../language-def-impl";
+import {LanguageDefImpl} from "../language-def-impl";
 import {
-    AllLanguagesAllNamespacesTranslationResource,
+    AllLanguagesAllNamespacesTranslationResource, delay,
     I18nStore,
     MissingKeyHandler,
     TranslationResourceLoader,
@@ -11,8 +11,8 @@ import {Dictionary} from "../dictionary";
 const runsOnServerSide = typeof window === 'undefined'
 
 if (!runsOnServerSide) {
-    // throw new Error("this config is intended on server side only")
-    console.log(new Error("this config is intended on server side only"))
+    throw new Error("this config is intended on server side only")
+    // console.log(new Error("this config is intended on server side only"))
 }
 
 
@@ -89,7 +89,7 @@ export class SimplelocalizeBackendApiClient {
 
 
     static async allLanguagesImpl(): Promise<LanguageDefImpl[]> {
-        const resp = await fetch(`${loadPathBase}/_languages`/*, {cache: "force-cache"}*/);
+        const resp = await fetch(`${loadPathBase}/_languages`, /*{cache: "force-cache"}*/);
         if (!resp.ok) {
             throw new Error("can't load languages: " + resp.status + ", " + (await resp.text()));
         }
@@ -113,7 +113,7 @@ export class SimplelocalizeBackendApiClient {
                                                           updateMissing: boolean,
                                                           options: any): void => {
 
-        console.log("received missing key: ", lngs, ns, key, fallbackValue/*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
+        // console.log("received missing key: ", lngs, ns, key, fallbackValue/*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
 
         lngs.forEach((lng) => {
 
@@ -161,21 +161,30 @@ export class SimplelocalizeBackendApiClient {
     }
 
     private static async loadTranslationsUsingApi(allLng: readonly string[], allNs: readonly string[]): Promise<AllLanguagesAllNamespacesTranslationResource> {
-        console.log("querying the language ", allLng, " on namespace ", allNs, "url", `${loadTranslationsApiBase}`);
+        console.log("querying the language on API ", allLng.join(", "), " on namespace ", allNs, "url", `${loadTranslationsApiBase}`);
         let finished = false;
         let page = 0;
         const translatedReply: AllLanguagesAllNamespacesTranslationResource = {};
         while (!finished) {
-            const resp = await fetch(`${loadTranslationsApiBase}?page=${page}`, {
+            const resp = fetch(`${loadTranslationsApiBase}?page=${page}`, {
                 method: 'GET',
                 mode: 'cors',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-SimpleLocalize-Token': apiKey
                 },
-                cache: 'no-cache'
+                // cache: 'force-cache'
             })
-            const reply = await resp.json();
+                .then(resp => resp.json())
+                .catch(reason => {console.log("can't download translations: ", reason)});
+
+            const reply = await resp;
+            if (reply.status != 200) {
+                throw new Error("can't retrieve translations: " + reply);
+            }
+
+            console.log("received data page ", page, reply.msg)
+
             reply.data.forEach((t: any) => {
                 const key = t.key;
                 const namespace = t.namespace;
@@ -189,10 +198,14 @@ export class SimplelocalizeBackendApiClient {
                     translatedReply[language][namespace] = {}
                 }
                 translatedReply[language][namespace][key] = text;
+                // if (language === "it") {
+                //     console.log("translatedReply[language][namespace][key] = text", language, namespace, key, text)
+                // }
             });
 
             page++;
             finished = reply.data.length == 0;
+            delay(200)
         }
 
         allLng.forEach(lng => {

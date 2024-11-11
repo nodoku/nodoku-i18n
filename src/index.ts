@@ -1,4 +1,4 @@
-import LanguageDefImpl from "./i18n/language-def-impl";
+import {LanguageDefImpl} from "./i18n/language-def-impl";
 import {I18nextProvider, NdTranslatedText} from "nodoku-core";
 import {I18nStore} from "./i18n/i18n-store";
 import {
@@ -25,7 +25,7 @@ export namespace NodokuI18n {
 
             const allLlngs = (await SimplelocalizeBackendApiClient.allLanguagesImpl()).map(l => l.key);
 
-            console.log("in initI18nStore allLlngs", allLlngs)
+            // console.log("in initI18nStore allLlngs", allLlngs)
 
             await I18nStore.initStore(allLlngs,
                 nampespaces, fallbackLng, saveMissing,

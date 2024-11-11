@@ -1,4 +1,4 @@
-import LanguageDefImpl from "../language-def-impl";
+import { LanguageDefImpl } from "../language-def-impl";
 import { MissingKeyHandler, TranslationResourceLoader } from "../i18n-store";
 export declare const projectToken: string | undefined;
 export declare const cdnBaseUrl = "https://cdn.simplelocalize.io";

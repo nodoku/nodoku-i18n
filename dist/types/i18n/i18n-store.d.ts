@@ -1,5 +1,7 @@
+import { i18n } from "i18next";
 import { NdTranslatedText } from "nodoku-core";
 import { OnFallbackLngTextUpdateStrategyImpl } from "./simplelocalize/simplelocalize-backend-api-client";
+export declare const delay: (ms: number) => Promise<unknown>;
 export type LanguageNsTranslationResource = {
     [key: string]: string;
 };
@@ -23,9 +25,10 @@ export type FallbackLanguageValueChangeHandler = (language: string, namespace: s
 export type TranslationResourceLoader = (allLng: readonly string[], allNs: readonly string[]) => Promise<AllLanguagesAllNamespacesTranslationResource>;
 export declare class I18nStore {
     private static sharedI18n;
+    private static isInitStarted;
     static initStore(allLngs: readonly string[], nampespaces: readonly string[], fallbackLng: string, saveMissing: boolean, onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl, resourceLoader: TranslationResourceLoader, missingKeyHandler: MissingKeyHandler): Promise<void>;
     private static createAndInitI18next;
-    static reloadResources(): Promise<void>;
+    static reloadResources(i18n?: i18n | undefined): Promise<void>;
     private static createOptions;
     static translate(lng: string, ns: string, key: string): string;
     private static translateTranslatableText;

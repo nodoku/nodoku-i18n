@@ -45,14 +45,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { I18nStore } from "../i18n-store";
+import { delay, I18nStore } from "../i18n-store";
 import { Dictionary } from "../dictionary";
 var runsOnServerSide = typeof window === 'undefined';
 if (!runsOnServerSide) {
-    // throw new Error("this config is intended on server side only")
-    console.log(new Error("this config is intended on server side only"));
+    throw new Error("this config is intended on server side only");
+    // console.log(new Error("this config is intended on server side only"))
 }
-"use server";
 export var projectToken = process.env.SIMPLELOCALIZE_PROJECT_TOKEN;
 export var cdnBaseUrl = "https://cdn.simplelocalize.io";
 export var environment = "_latest"; // or "_production"
@@ -108,7 +107,7 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
             var resp, _a, _b;
             return __generator(this, function (_c) {
                 switch (_c.label) {
-                    case 0: return [4 /*yield*/, fetch("".concat(loadPathBase, "/_languages") /*, {cache: "force-cache"}*/)];
+                    case 0: return [4 /*yield*/, fetch("".concat(loadPathBase, "/_languages"))];
                     case 1:
                         resp = _c.sent();
                         if (!!resp.ok) return [3 /*break*/, 3];
@@ -182,27 +181,31 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("querying the language ", allLng, " on namespace ", allNs, "url", "".concat(loadTranslationsApiBase));
+                        console.log("querying the language on API ", allLng.join(", "), " on namespace ", allNs, "url", "".concat(loadTranslationsApiBase));
                         finished = false;
                         page = 0;
                         translatedReply = {};
                         _a.label = 1;
                     case 1:
-                        if (!!finished) return [3 /*break*/, 4];
-                        return [4 /*yield*/, fetch("".concat(loadTranslationsApiBase, "?page=").concat(page), {
-                                method: 'GET',
-                                mode: 'cors',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-SimpleLocalize-Token': apiKey
-                                },
-                                cache: 'no-cache'
-                            })];
+                        if (!!finished) return [3 /*break*/, 3];
+                        resp = fetch("".concat(loadTranslationsApiBase, "?page=").concat(page), {
+                            method: 'GET',
+                            mode: 'cors',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-SimpleLocalize-Token': apiKey
+                            },
+                            // cache: 'force-cache'
+                        })
+                            .then(function (resp) { return resp.json(); })
+                            .catch(function (reason) { console.log("can't download translations: ", reason); });
+                        return [4 /*yield*/, resp];
                     case 2:
-                        resp = _a.sent();
-                        return [4 /*yield*/, resp.json()];
-                    case 3:
                         reply = _a.sent();
+                        if (reply.status != 200) {
+                            throw new Error("can't retrieve translations: " + reply);
+                        }
+                        console.log("received data page ", page, reply.msg);
                         reply.data.forEach(function (t) {
                             var key = t.key;
                             var namespace = t.namespace;
@@ -215,11 +218,15 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
                                 translatedReply[language][namespace] = {};
                             }
                             translatedReply[language][namespace][key] = text;
+                            // if (language === "it") {
+                            //     console.log("translatedReply[language][namespace][key] = text", language, namespace, key, text)
+                            // }
                         });
                         page++;
                         finished = reply.data.length == 0;
+                        delay(200);
                         return [3 /*break*/, 1];
-                    case 4:
+                    case 3:
                         allLng.forEach(function (lng) {
                             if (!translatedReply.hasOwnProperty(lng)) {
                                 translatedReply[lng] = {};
@@ -468,7 +475,7 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
     SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated = new Dictionary();
     SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only;
     SimplelocalizeBackendApiClient.missingKeyHandler = function (lngs, ns, key, fallbackValue, updateMissing, options) {
-        console.log("received missing key: ", lngs, ns, key, fallbackValue /*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
+        // console.log("received missing key: ", lngs, ns, key, fallbackValue/*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
         lngs.forEach(function (lng) {
             var missingKey = { language: lng, namespace: ns, key: key };
             /*

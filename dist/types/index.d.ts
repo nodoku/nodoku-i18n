@@ -1,4 +1,4 @@
-import LanguageDefImpl from "./i18n/language-def-impl";
+import { LanguageDefImpl } from "./i18n/language-def-impl";
 import { I18nextProvider } from "nodoku-core";
 import { OnFallbackLngTextUpdateStrategyImpl } from "./i18n/simplelocalize/simplelocalize-backend-api-client";
 export declare namespace NodokuI18n {

@@ -36,29 +36,45 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { createInstance } from "i18next";
 import { SimplelocalizeBackendApiClient } from "./simplelocalize/simplelocalize-backend-api-client";
-var delay = function (ms) { return new Promise(function (res) { return setTimeout(res, ms); }); };
+export var delay = function (ms) { return new Promise(function (res) { return setTimeout(res, ms); }); };
 var I18nStore = /** @class */ (function () {
     function I18nStore() {
     }
     I18nStore.initStore = function (allLngs, nampespaces, fallbackLng, saveMissing, onFallbackLngTextUpdateStrategy, resourceLoader, missingKeyHandler) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var k, instanceInCreation;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
-                        // if (this.sharedI18n != undefined) {
-                        //     return;
-                        // }
-                        _a = this;
-                        return [4 /*yield*/, I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, resourceLoader, missingKeyHandler)];
+                        if (I18nStore.sharedI18n != undefined) {
+                            return [2 /*return*/];
+                        }
+                        if (!I18nStore.isInitStarted) return [3 /*break*/, 4];
+                        k = 200;
+                        _a.label = 1;
                     case 1:
-                        // if (this.sharedI18n != undefined) {
-                        //     return;
-                        // }
-                        _a.sharedI18n = _b.sent();
-                        // await I18nStore.reloadResources();
+                        if (!(k-- >= 0 && I18nStore.sharedI18n == undefined)) return [3 /*break*/, 3];
+                        return [4 /*yield*/, delay(1000)];
+                    case 2:
+                        _a.sent();
+                        return [3 /*break*/, 1];
+                    case 3:
+                        if (I18nStore.sharedI18n == undefined) {
+                            throw new Error("has been waiting for initialization, but failed...");
+                        }
+                        return [2 /*return*/];
+                    case 4:
+                        I18nStore.isInitStarted = true;
+                        return [4 /*yield*/, I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, resourceLoader, missingKeyHandler)];
+                    case 5:
+                        instanceInCreation = _a.sent();
+                        return [4 /*yield*/, I18nStore.reloadResources(instanceInCreation)];
+                    case 6:
+                        _a.sent();
                         SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
                         setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000);
+                        I18nStore.sharedI18n = instanceInCreation;
+                        I18nStore.isInitStarted = false;
                         return [2 /*return*/];
                 }
             });
@@ -74,34 +90,40 @@ var I18nStore = /** @class */ (function () {
                         return [4 /*yield*/, I18nStore.createOptions(allLngs, namespaces, fallbackLng, saveMissing, translationToResource, missingKeyHandler)];
                     case 1:
                         options = _a.sent();
-                        return [4 /*yield*/, i18nInstance.init(options)];
+                        return [4 /*yield*/, i18nInstance.init(options)
+                            // i18nInstance.languages = allLngs;
+                        ];
                     case 2:
                         _a.sent();
-                        i18nInstance.languages = allLngs;
+                        // i18nInstance.languages = allLngs;
                         return [2 /*return*/, i18nInstance];
                 }
             });
         });
     };
     I18nStore.reloadResources = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var options, namespaces, fallbackLng, translationToResource, _a;
+        return __awaiter(this, arguments, void 0, function (i18n) {
+            var i18nInstance, options, namespaces, fallbackLng, translationToResource, _a;
+            if (i18n === void 0) { i18n = undefined; }
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (!this.sharedI18n) return [3 /*break*/, 3];
-                        options = this.sharedI18n.options;
+                        i18nInstance = i18n == undefined ? I18nStore.sharedI18n : i18n;
+                        if (!i18nInstance) return [3 /*break*/, 3];
+                        options = i18nInstance.options;
                         namespaces = Array.isArray(options.ns) ? options.ns || [] : [options.ns];
                         fallbackLng = Array.isArray(options.fallbackLng) ? options.fallbackLng[0] : options.fallbackLng;
                         translationToResource = options.translationToResource;
+                        // options.resources = await translationToResource(I18nStore.sharedI18n.languages, namespaces);
                         _a = options;
-                        return [4 /*yield*/, translationToResource(this.sharedI18n.languages, namespaces)];
+                        return [4 /*yield*/, translationToResource(options.supportedLngs, namespaces)];
                     case 1:
-                        _a.resources = _b.sent(); //this.loadTranslations(this.sharedI18n.languages, namespaces/*, fallbackLng*/, translationToResource);
-                        return [4 /*yield*/, this.sharedI18n.init(options)];
+                        // options.resources = await translationToResource(I18nStore.sharedI18n.languages, namespaces);
+                        _a.resources = _b.sent();
+                        return [4 /*yield*/, /*I18nStore.sharedI18n*/ i18nInstance.init(options)];
                     case 2:
                         _b.sent();
-                        console.log("loaded translation resources for ", this.sharedI18n.languages, fallbackLng);
+                        console.log("loaded translation resources for ", options.supportedLngs.join(", "), fallbackLng);
                         _b.label = 3;
                     case 3: return [2 /*return*/];
                 }
@@ -119,8 +141,8 @@ var I18nStore = /** @class */ (function () {
                         lng: fallbackLng,
                         ns: namespaces,
                         saveMissing: saveMissing,
-                        // preload: false,
-                        // updateMissing: false,
+                        preload: allLngs,
+                        updateMissing: false,
                         translationToResource: translationToResource,
                         missingKeyHandler: missingKeyHandler
                     }];
@@ -128,30 +150,33 @@ var I18nStore = /** @class */ (function () {
         });
     };
     I18nStore.translate = function (lng, ns, key) {
-        if (!this.sharedI18n) {
+        if (!I18nStore.sharedI18n) {
             return "translation n/a";
         }
-        return this.sharedI18n.getFixedT(lng, ns)(key);
+        return I18nStore.sharedI18n.getFixedT(lng, ns)(key);
     };
     I18nStore.translateTranslatableText = function (lng, onFallbackLanguageValueChange, text) {
-        if (this.sharedI18n) {
-            var fallbackLng = Array.isArray(this.sharedI18n.options.fallbackLng) ? this.sharedI18n.options.fallbackLng[0] : this.sharedI18n.options.fallbackLng;
+        if (I18nStore.sharedI18n) {
+            var fallbackLng = Array.isArray(I18nStore.sharedI18n.options.fallbackLng) ?
+                I18nStore.sharedI18n.options.fallbackLng[0] : I18nStore.sharedI18n.options.fallbackLng;
             /*
              * make sure the fallback lng translation is intercepted by the missing key handler and eventually written to backend
              */
             var fallbackText = text.excludeFromTranslation ? I18nStore.wrapInBraces(text.text.trim()) : text.text.trim();
-            var existingFallback = this.sharedI18n.getFixedT(fallbackLng, text.ns)(text.key, fallbackText);
+            var existingFallback = I18nStore.sharedI18n.getFixedT(fallbackLng, text.ns)(text.key, fallbackText);
             if (existingFallback !== fallbackText) {
                 console.log("detected translation change: ", existingFallback, fallbackText);
                 onFallbackLanguageValueChange(fallbackLng, text.ns, text.key, fallbackText);
             }
-            var details = this.sharedI18n.getFixedT(lng, text.ns)(text.key, { returnDetails: true });
+            var details = I18nStore.sharedI18n.getFixedT(lng, text.ns)(text.key, { returnDetails: true });
             // console.log(">>>>>>>.... details", this.unwrapFromBraces(details.res), details, existingFallback)
             var translationExists = details.usedLng === lng && details.res && details.res.length > 0;
             if (translationExists) {
+                // console.log("text is included in translation")
                 return I18nStore.unwrapFromBraces(details.res);
             }
             else if (text.excludeFromTranslation && existingFallback.length > 0) {
+                // console.log("text is excluded from translation")
                 return I18nStore.unwrapFromBraces(existingFallback);
             }
             return I18nStore.decorateUntranslated(lng, text, existingFallback);
@@ -188,6 +213,7 @@ var I18nStore = /** @class */ (function () {
         return "<small style=\"font-size: 12px\">n/a ".concat(lng, ":").concat(text.ns, ":").concat(text.key, "</small>[").concat(existingFallback, "]");
     };
     I18nStore.sharedI18n = undefined;
+    I18nStore.isInitStarted = false;
     return I18nStore;
 }());
 export { I18nStore };

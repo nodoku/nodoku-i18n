@@ -6,7 +6,7 @@ import {
     SimplelocalizeBackendApiClient
 } from "./simplelocalize/simplelocalize-backend-api-client";
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export type LanguageNsTranslationResource = {[key: string]: string}
 
@@ -36,6 +36,7 @@ export type TranslationResourceLoader = (allLng: readonly string[], allNs: reado
 export class I18nStore {
 
     private static sharedI18n: i18n | undefined = undefined;
+    private static isInitStarted: boolean = false;
 
 
     static async initStore(allLngs: readonly string[],
@@ -46,17 +47,32 @@ export class I18nStore {
                            resourceLoader: TranslationResourceLoader,
                            missingKeyHandler: MissingKeyHandler): Promise<void> {
 
-        // if (this.sharedI18n != undefined) {
-        //     return;
-        // }
+        if (I18nStore.sharedI18n != undefined) {
+            return;
+        }
 
-        this.sharedI18n = await I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, resourceLoader, missingKeyHandler);
+        if (I18nStore.isInitStarted) {
+            let k = 200;
+            while (k-- >= 0 && I18nStore.sharedI18n == undefined) {
+                await delay(1000);
+            }
+            if (I18nStore.sharedI18n == undefined) {
+                throw new Error("has been waiting for initialization, but failed...");
+            }
+            return;
+        }
 
-        // await I18nStore.reloadResources();
+        I18nStore.isInitStarted = true;
+
+        const instanceInCreation: i18n =  await I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, resourceLoader, missingKeyHandler);
+
+        await I18nStore.reloadResources(instanceInCreation);
 
         SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
         setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000)
 
+        I18nStore.sharedI18n = instanceInCreation;
+        I18nStore.isInitStarted = false;
 
     }
 
@@ -70,24 +86,27 @@ export class I18nStore {
         const i18nInstance: i18n = createInstance()
         const options = await I18nStore.createOptions(allLngs, namespaces, fallbackLng, saveMissing, translationToResource, missingKeyHandler);
         await i18nInstance.init(options)
-        i18nInstance.languages = allLngs;
+        // i18nInstance.languages = allLngs;
         return i18nInstance;
     }
 
 
-    public static async reloadResources() {
+    public static async reloadResources(i18n: i18n | undefined = undefined): Promise<void> {
 
-        if (this.sharedI18n) {
+        const i18nInstance: i18n | undefined = i18n == undefined ? I18nStore.sharedI18n : i18n;
 
-            const options = this.sharedI18n.options;//await I18nStore.createOptions(lng, namespaces, fallbackLng, translationToResource, missingKeyHandler);
+        if (/*I18nStore.sharedI18n*/i18nInstance) {
+
+            const options = /*I18nStore.sharedI18n*/i18nInstance.options;//await I18nStore.createOptions(lng, namespaces, fallbackLng, translationToResource, missingKeyHandler);
             const namespaces = Array.isArray(options.ns) ? options.ns || [] : [options.ns];
             const fallbackLng: string = Array.isArray(options.fallbackLng) ? options.fallbackLng[0] : options.fallbackLng;
             const translationToResource = (options as {translationToResource: TranslationResourceLoader}).translationToResource;
 
-            options.resources = await translationToResource(this.sharedI18n.languages, namespaces);//this.loadTranslations(this.sharedI18n.languages, namespaces/*, fallbackLng*/, translationToResource);
-            await this.sharedI18n.init(options)
+            // options.resources = await translationToResource(I18nStore.sharedI18n.languages, namespaces);
+            options.resources = await translationToResource(options.supportedLngs as readonly string[], namespaces);
+            await /*I18nStore.sharedI18n*/i18nInstance.init(options)
 
-            console.log("loaded translation resources for ", this.sharedI18n.languages, fallbackLng)
+            console.log("loaded translation resources for ", (options.supportedLngs as string[]).join(", "), fallbackLng)
 
         }
 
@@ -109,7 +128,7 @@ export class I18nStore {
             lng: fallbackLng,
             ns: namespaces,
             saveMissing: saveMissing,
-            preload: false,
+            preload: allLngs,
             updateMissing: false,
             translationToResource: translationToResource,
             missingKeyHandler: missingKeyHandler
@@ -117,37 +136,40 @@ export class I18nStore {
     }
 
     static translate(lng: string, ns: string, key: string): string {
-        if (!this.sharedI18n) {
+        if (!I18nStore.sharedI18n) {
             return "translation n/a";
         }
-        return this.sharedI18n.getFixedT(lng, ns)(key);
+        return I18nStore.sharedI18n.getFixedT(lng, ns)(key);
     }
 
     private static translateTranslatableText(lng: string,
                                              onFallbackLanguageValueChange: FallbackLanguageValueChangeHandler,
                                              text: NdTranslatedText, ): string {
 
-        if (this.sharedI18n) {
+        if (I18nStore.sharedI18n) {
 
-            const fallbackLng: string = Array.isArray(this.sharedI18n.options.fallbackLng) ? this.sharedI18n.options.fallbackLng[0] : this.sharedI18n.options.fallbackLng;
+            const fallbackLng: string = Array.isArray(I18nStore.sharedI18n.options.fallbackLng) ?
+                I18nStore.sharedI18n.options.fallbackLng[0] : I18nStore.sharedI18n.options.fallbackLng;
 
             /*
              * make sure the fallback lng translation is intercepted by the missing key handler and eventually written to backend
              */
             const fallbackText = text.excludeFromTranslation ? I18nStore.wrapInBraces(text.text.trim()) : text.text.trim();
-            const existingFallback: string = this.sharedI18n.getFixedT(fallbackLng, text.ns)(text.key, fallbackText)
+            const existingFallback: string = I18nStore.sharedI18n.getFixedT(fallbackLng, text.ns)(text.key, fallbackText)
 
             if (existingFallback !== fallbackText) {
                 console.log("detected translation change: ", existingFallback, fallbackText)
                 onFallbackLanguageValueChange(fallbackLng, text.ns, text.key, fallbackText)
             }
 
-            const details = this.sharedI18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
+            const details = I18nStore.sharedI18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
             // console.log(">>>>>>>.... details", this.unwrapFromBraces(details.res), details, existingFallback)
             const translationExists = details.usedLng === lng && details.res && details.res.length > 0;
             if (translationExists) {
+                // console.log("text is included in translation")
                 return I18nStore.unwrapFromBraces(details.res);
             } else if (text.excludeFromTranslation && existingFallback.length > 0) {
+                // console.log("text is excluded from translation")
                 return I18nStore.unwrapFromBraces(existingFallback);
             }
 
