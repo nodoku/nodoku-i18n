@@ -22,7 +22,7 @@
     "eslint-config-next": "14.2.3",
     "i18next": "^23.11.5",
     "next": "14.2.10",
-    "nodoku-core": "../nodoku-core/dist",
+    "nodoku-core": "0.1.4",
     "typescript": "^5"
   },
   "devDependencies": {
@@ -36,6 +36,6 @@
     "typescript": "^5"
   },
   "scripts": {
-    "dist": "shx rm -rf dist && tsc && shx cp ./package-dist.json ./dist/package.json"
+    "dist": "shx rm -rf dist && tsc && shx cp ./package-dist.json ./dist/package.json && shx cp ./package-dist.json ./dist/package.json && shx cp ./README.md ./dist"
   }
 }

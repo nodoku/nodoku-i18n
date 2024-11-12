@@ -1,5 +1,5 @@
 import { i18n } from "i18next";
-import { NdTranslatedText } from "nodoku-core";
+import { NdTranslatableText } from "nodoku-core";
 import { OnFallbackLngTextUpdateStrategyImpl } from "./simplelocalize/simplelocalize-backend-api-client";
 export declare const delay: (ms: number) => Promise<unknown>;
 export type LanguageNsTranslationResource = {
@@ -33,7 +33,7 @@ export declare class I18nStore {
     static translate(lng: string, ns: string, key: string): string;
     private static translateTranslatableText;
     static i18nForNodokuImpl(lng: string, fallbackLanguageValueChangeHandler: FallbackLanguageValueChangeHandler): Promise<{
-        t: (text: NdTranslatedText) => string;
+        t: (text: NdTranslatableText) => string;
     }>;
     private static wrapInBraces;
     private static unwrapFromBraces;

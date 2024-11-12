@@ -34,4 +34,3 @@ export var environment = "_latest"; // or "_production"
 //
 //     return useTranslation(ns, getOptions(lng, ns, 'en'/*, languages*/));
 // }
-//# sourceMappingURL=client-i18n-conf.js.map

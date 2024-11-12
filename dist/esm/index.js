@@ -77,4 +77,3 @@ export var NodokuI18n;
         }); };
     })(Simplelocalize = NodokuI18n.Simplelocalize || (NodokuI18n.Simplelocalize = {}));
 })(NodokuI18n || (NodokuI18n = {}));
-//# sourceMappingURL=index.js.map
