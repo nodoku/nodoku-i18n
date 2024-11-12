@@ -1,6 +1,6 @@
 import {createInstance, i18n} from "i18next";
 import type {InitOptions} from "i18next";
-import {NdTranslatedText} from "nodoku-core";
+import {NdTranslatableText} from "nodoku-core";
 import {
     OnFallbackLngTextUpdateStrategyImpl,
     SimplelocalizeBackendApiClient
@@ -144,7 +144,7 @@ export class I18nStore {
 
     private static translateTranslatableText(lng: string,
                                              onFallbackLanguageValueChange: FallbackLanguageValueChangeHandler,
-                                             text: NdTranslatedText, ): string {
+                                             text: NdTranslatableText, ): string {
 
         if (I18nStore.sharedI18n) {
 
@@ -181,10 +181,10 @@ export class I18nStore {
     }
 
     static async i18nForNodokuImpl(lng: string, fallbackLanguageValueChangeHandler: FallbackLanguageValueChangeHandler):
-        Promise<{t: (text: NdTranslatedText) => string}> {
+        Promise<{t: (text: NdTranslatableText) => string}> {
 
         return {
-            t: (text: NdTranslatedText) => I18nStore.translateTranslatableText(lng, fallbackLanguageValueChangeHandler, text)
+            t: (text: NdTranslatableText) => I18nStore.translateTranslatableText(lng, fallbackLanguageValueChangeHandler, text)
         }
 
     }
@@ -206,7 +206,7 @@ export class I18nStore {
         return text;
     }
 
-    private static decorateUntranslated(lng: string, text: NdTranslatedText, existingFallback: string) {
+    private static decorateUntranslated(lng: string, text: NdTranslatableText, existingFallback: string) {
         return `<small style="font-size: 12px">n/a ${lng}:${text.ns}:${text.key}</small>[${existingFallback}]`;
     }
 

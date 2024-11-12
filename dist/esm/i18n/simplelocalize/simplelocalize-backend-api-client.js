@@ -494,4 +494,3 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
     return SimplelocalizeBackendApiClient;
 }());
 export { SimplelocalizeBackendApiClient };
-//# sourceMappingURL=simplelocalize-backend-api-client.js.map

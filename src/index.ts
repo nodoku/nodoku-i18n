@@ -1,5 +1,5 @@
 import {LanguageDefImpl} from "./i18n/language-def-impl";
-import {I18nextProvider, NdTranslatedText} from "nodoku-core";
+import {I18nextProvider, NdTranslatableText} from "nodoku-core";
 import {I18nStore} from "./i18n/i18n-store";
 import {
     OnFallbackLngTextUpdateStrategyImpl,
@@ -41,7 +41,7 @@ export namespace NodokuI18n {
             return await SimplelocalizeBackendApiClient.allLanguagesImpl();
         }
 
-        export const i18nForNodoku: I18nextProvider = async (lng: string): Promise<{t: (text: NdTranslatedText) => string}> => {
+        export const i18nForNodoku: I18nextProvider = async (lng: string): Promise<{t: (text: NdTranslatableText) => string}> => {
             return I18nStore.i18nForNodokuImpl(lng, SimplelocalizeBackendApiClient.onFallbackLanguageValueChange);
         }
 

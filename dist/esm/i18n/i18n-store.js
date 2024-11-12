@@ -217,4 +217,3 @@ var I18nStore = /** @class */ (function () {
     return I18nStore;
 }());
 export { I18nStore };
-//# sourceMappingURL=i18n-store.js.map
