@@ -10,9 +10,6 @@
   },
   "module": "./esm/index.js",
   "types": "./types/index.d.ts",
-  "files": [
-    "./"
-  ],
   "type": "module",
   "dependencies": {
     "@types/node": "^20.12.11",
@@ -22,7 +19,7 @@
     "eslint-config-next": "14.2.3",
     "i18next": "^23.11.5",
     "next": "14.2.10",
-    "nodoku-core": "0.1.4",
+    "nodoku-core": "0.1.5",
     "typescript": "^5"
   },
   "devDependencies": {
