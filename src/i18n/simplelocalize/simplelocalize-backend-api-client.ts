@@ -165,8 +165,9 @@ export class SimplelocalizeBackendApiClient {
         let finished = false;
         let page = 0;
         const translatedReply: AllLanguagesAllNamespacesTranslationResource = {};
-        while (!finished) {
-            const resp = fetch(`${loadTranslationsApiBase}?page=${page}`, {
+        let retries: number = 10;
+        while (!finished && retries >= 0) {
+            const resp = await fetch(`${loadTranslationsApiBase}?page=${page}`, {
                 method: 'GET',
                 mode: 'cors',
                 headers: {
@@ -175,37 +176,53 @@ export class SimplelocalizeBackendApiClient {
                 },
                 // cache: 'force-cache'
             })
-                .then(resp => resp.json())
-                .catch(reason => {console.log("can't download translations: ", reason)});
+                // .then(resp => resp.json())
+                .catch(reason => {throw new Error("can't download translations: ", reason)});
 
-            const reply = await resp;
-            if (reply.status != 200) {
-                throw new Error("can't retrieve translations: " + reply);
+            if (!resp || resp.status != 200) {
+                throw new Error("can't retrieve translations: " + resp.body);
             }
 
-            console.log("received data page ", page, reply.msg)
+            const text = await (resp.text());
+            let reply = undefined;
+            if (text.indexOf("Too Many Requests") >= 0) {
+                // retry
+                console.log("too many requests, waiting and retrying...");
+                await delay(1000)
+            } else {
+                reply = JSON.parse(text);
+            }
 
-            reply.data.forEach((t: any) => {
-                const key = t.key;
-                const namespace = t.namespace;
-                const language = t.language;
-                const text = t.text;
+            if (!reply) {
+                --retries;
+            } else {
+                console.log("received data page ", page, reply.msg)
 
-                if (!translatedReply.hasOwnProperty(language)) {
-                    translatedReply[language] = {};
-                }
-                if (!translatedReply[language].hasOwnProperty(namespace)) {
-                    translatedReply[language][namespace] = {}
-                }
-                translatedReply[language][namespace][key] = text;
-                // if (language === "it") {
-                //     console.log("translatedReply[language][namespace][key] = text", language, namespace, key, text)
-                // }
-            });
+                reply.data.forEach((t: any) => {
+                    const key = t.key;
+                    const namespace = t.namespace;
+                    const language = t.language;
+                    const text = t.text;
 
-            page++;
-            finished = reply.data.length == 0;
-            delay(200)
+                    if (!translatedReply.hasOwnProperty(language)) {
+                        translatedReply[language] = {};
+                    }
+                    if (!translatedReply[language].hasOwnProperty(namespace)) {
+                        translatedReply[language][namespace] = {}
+                    }
+                    translatedReply[language][namespace][key] = text;
+                    // if (language === "it") {
+                    //     console.log("translatedReply[language][namespace][key] = text", language, namespace, key, text)
+                    // }
+                });
+
+                page++;
+                finished = reply.data.length == 0;
+                delay(200)
+
+            }
+
+
         }
 
         allLng.forEach(lng => {

@@ -177,7 +177,7 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
     };
     SimplelocalizeBackendApiClient.loadTranslationsUsingApi = function (allLng, allNs) {
         return __awaiter(this, void 0, void 0, function () {
-            var finished, page, translatedReply, resp, reply;
+            var finished, page, translatedReply, retries, resp, text, reply;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -185,48 +185,68 @@ var SimplelocalizeBackendApiClient = /** @class */ (function () {
                         finished = false;
                         page = 0;
                         translatedReply = {};
+                        retries = 10;
                         _a.label = 1;
                     case 1:
-                        if (!!finished) return [3 /*break*/, 3];
-                        resp = fetch("".concat(loadTranslationsApiBase, "?page=").concat(page), {
-                            method: 'GET',
-                            mode: 'cors',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-SimpleLocalize-Token': apiKey
-                            },
-                            // cache: 'force-cache'
-                        })
-                            .then(function (resp) { return resp.json(); })
-                            .catch(function (reason) { console.log("can't download translations: ", reason); });
-                        return [4 /*yield*/, resp];
+                        if (!(!finished && retries >= 0)) return [3 /*break*/, 7];
+                        return [4 /*yield*/, fetch("".concat(loadTranslationsApiBase, "?page=").concat(page), {
+                                method: 'GET',
+                                mode: 'cors',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-SimpleLocalize-Token': apiKey
+                                },
+                                // cache: 'force-cache'
+                            })
+                                // .then(resp => resp.json())
+                                .catch(function (reason) { throw new Error("can't download translations: ", reason); })];
                     case 2:
-                        reply = _a.sent();
-                        if (reply.status != 200) {
-                            throw new Error("can't retrieve translations: " + reply);
+                        resp = _a.sent();
+                        if (!resp || resp.status != 200) {
+                            throw new Error("can't retrieve translations: " + resp.body);
                         }
-                        console.log("received data page ", page, reply.msg);
-                        reply.data.forEach(function (t) {
-                            var key = t.key;
-                            var namespace = t.namespace;
-                            var language = t.language;
-                            var text = t.text;
-                            if (!translatedReply.hasOwnProperty(language)) {
-                                translatedReply[language] = {};
-                            }
-                            if (!translatedReply[language].hasOwnProperty(namespace)) {
-                                translatedReply[language][namespace] = {};
-                            }
-                            translatedReply[language][namespace][key] = text;
-                            // if (language === "it") {
-                            //     console.log("translatedReply[language][namespace][key] = text", language, namespace, key, text)
-                            // }
-                        });
-                        page++;
-                        finished = reply.data.length == 0;
-                        delay(200);
-                        return [3 /*break*/, 1];
+                        return [4 /*yield*/, (resp.text())];
                     case 3:
+                        text = _a.sent();
+                        reply = undefined;
+                        if (!(text.indexOf("Too Many Requests") >= 0)) return [3 /*break*/, 5];
+                        // retry
+                        console.log("too many requests, waiting and retrying...");
+                        return [4 /*yield*/, delay(1000)];
+                    case 4:
+                        _a.sent();
+                        return [3 /*break*/, 6];
+                    case 5:
+                        reply = JSON.parse(text);
+                        _a.label = 6;
+                    case 6:
+                        if (!reply) {
+                            --retries;
+                        }
+                        else {
+                            console.log("received data page ", page, reply.msg);
+                            reply.data.forEach(function (t) {
+                                var key = t.key;
+                                var namespace = t.namespace;
+                                var language = t.language;
+                                var text = t.text;
+                                if (!translatedReply.hasOwnProperty(language)) {
+                                    translatedReply[language] = {};
+                                }
+                                if (!translatedReply[language].hasOwnProperty(namespace)) {
+                                    translatedReply[language][namespace] = {};
+                                }
+                                translatedReply[language][namespace][key] = text;
+                                // if (language === "it") {
+                                //     console.log("translatedReply[language][namespace][key] = text", language, namespace, key, text)
+                                // }
+                            });
+                            page++;
+                            finished = reply.data.length == 0;
+                            delay(200);
+                        }
+                        return [3 /*break*/, 1];
+                    case 7:
                         allLng.forEach(function (lng) {
                             if (!translatedReply.hasOwnProperty(lng)) {
                                 translatedReply[lng] = {};
