@@ -1,6 +1,6 @@
 {
   "name": "nodoku-i18n",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",

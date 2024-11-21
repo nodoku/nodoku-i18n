@@ -1,6 +1,6 @@
 {
   "name": "nodoku-i18n",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
@@ -18,9 +18,10 @@
     "eslint": "^8.56.0",
     "eslint-config-next": "14.2.3",
     "i18next": "^23.11.5",
-    "next": "14.2.10",
-    "nodoku-core": "0.1.6",
-    "typescript": "^5"
+    "next": "14.2.10"
+  },
+  "peerDependencies": {
+    "nodoku-core": "^0.2"
   },
   "devDependencies": {
     "@types/node": "^20",
