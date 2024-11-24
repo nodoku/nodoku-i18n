@@ -48,6 +48,7 @@ export class I18nStore {
                            missingKeyHandler: MissingKeyHandler): Promise<void> {
 
         if (I18nStore.sharedI18n != undefined) {
+            await I18nStore.reloadResources(I18nStore.sharedI18n);
             return;
         }
 
@@ -129,7 +130,7 @@ export class I18nStore {
             ns: namespaces,
             saveMissing: saveMissing,
             preload: allLngs,
-            updateMissing: false,
+            updateMissing: saveMissing,
             translationToResource: translationToResource,
             missingKeyHandler: missingKeyHandler
         }

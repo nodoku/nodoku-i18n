@@ -46,30 +46,33 @@ var I18nStore = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (I18nStore.sharedI18n != undefined) {
-                            return [2 /*return*/];
-                        }
-                        if (!I18nStore.isInitStarted) return [3 /*break*/, 4];
-                        k = 200;
-                        _a.label = 1;
+                        if (!(I18nStore.sharedI18n != undefined)) return [3 /*break*/, 2];
+                        return [4 /*yield*/, I18nStore.reloadResources(I18nStore.sharedI18n)];
                     case 1:
-                        if (!(k-- >= 0 && I18nStore.sharedI18n == undefined)) return [3 /*break*/, 3];
-                        return [4 /*yield*/, delay(1000)];
-                    case 2:
                         _a.sent();
-                        return [3 /*break*/, 1];
+                        return [2 /*return*/];
+                    case 2:
+                        if (!I18nStore.isInitStarted) return [3 /*break*/, 6];
+                        k = 200;
+                        _a.label = 3;
                     case 3:
+                        if (!(k-- >= 0 && I18nStore.sharedI18n == undefined)) return [3 /*break*/, 5];
+                        return [4 /*yield*/, delay(1000)];
+                    case 4:
+                        _a.sent();
+                        return [3 /*break*/, 3];
+                    case 5:
                         if (I18nStore.sharedI18n == undefined) {
                             throw new Error("has been waiting for initialization, but failed...");
                         }
                         return [2 /*return*/];
-                    case 4:
+                    case 6:
                         I18nStore.isInitStarted = true;
                         return [4 /*yield*/, I18nStore.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, resourceLoader, missingKeyHandler)];
-                    case 5:
+                    case 7:
                         instanceInCreation = _a.sent();
                         return [4 /*yield*/, I18nStore.reloadResources(instanceInCreation)];
-                    case 6:
+                    case 8:
                         _a.sent();
                         SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
                         setInterval(SimplelocalizeBackendApiClient.pushMissingKeys, 10000);
@@ -142,7 +145,7 @@ var I18nStore = /** @class */ (function () {
                         ns: namespaces,
                         saveMissing: saveMissing,
                         preload: allLngs,
-                        updateMissing: false,
+                        updateMissing: saveMissing,
                         translationToResource: translationToResource,
                         missingKeyHandler: missingKeyHandler
                     }];
