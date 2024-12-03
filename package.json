@@ -1,6 +1,6 @@
 {
   "name": "nodoku-i18n",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
@@ -13,6 +13,9 @@
   "files": [
     "dist"
   ],
+  "bin": {
+    "nodoku-i18n-upload-missing-keys-to-simplelocalize": "./dist/esm/bin/upload-missing-keys-to-simplelocalize.js"
+  },
   "type": "module",
   "dependencies": {
     "@types/node": "^20.12.11",

@@ -1,37 +1,18 @@
-import {LanguageDefImpl} from "../language-def-impl";
-import {
-    AllLanguagesAllNamespacesTranslationResource, delay,
-    I18nStore,
-    MissingKeyHandler,
-    TranslationResourceLoader,
-    UpdatedKey
-} from "../i18n-store";
-import {Dictionary} from "../dictionary";
+import {Resource} from "i18next";
+import {LanguageDefImpl} from "../../util/language-def-impl.js";
+import {delay} from "../../store/abstract-i18n-store";
+import {UpdatedKey, UpdatingValue} from "../../util/dictionary.js";
+import {TranslationBackendClient} from "../../backend/translation-backend-client.js";
 
 const runsOnServerSide = typeof window === 'undefined'
 
 if (!runsOnServerSide) {
     throw new Error("this config is intended on server side only")
-    // console.log(new Error("this config is intended on server side only"))
 }
 
-
-
-export const projectToken = process.env.SIMPLELOCALIZE_PROJECT_TOKEN;
-export const cdnBaseUrl = "https://cdn.simplelocalize.io";
-export const environment = "_latest"; // or "_production"
-
-export const apiKey: string = process.env.SIMPLELOCALIZE_API_KEY ? process.env.SIMPLELOCALIZE_API_KEY : "n-a";
-
-export const loadPathBase = `${cdnBaseUrl}/${projectToken}/${environment}`;
 
 const loadTranslationsApiBase = "https://api.simplelocalize.io/api/v2/translations";
 
-
-interface UpdatingValue {
-    updKey: UpdatedKey;
-    text: string;
-}
 
 
 /*
@@ -76,20 +57,41 @@ export enum OnFallbackLngTextUpdateStrategyImpl {
     reset_reviewed_status
 }
 
-
-export class SimplelocalizeBackendApiClient {
-
-    static endpointUpdateKeys = "https://api.simplelocalize.io/api/v2/translations/bulk"
-    static endpointUploadKeys = "https://api.simplelocalize.io/api/v1/translation-keys/bulk"
-
-    private static missingKeysRequests: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
-    private static fallbackLanguageValuesToBeUpdated: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
-
-    public static onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl = OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only;
+export enum OnMissingKeyStrategyImpl {
+    upload, save_to_file
+}
 
 
-    static async allLanguagesImpl(): Promise<LanguageDefImpl[]> {
-        const resp = await fetch(`${loadPathBase}/_languages`, /*{cache: "force-cache"}*/);
+export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
+
+    private static cdnBaseUrl = "https://cdn.simplelocalize.io";
+    private static endpointUpdateKeys = "https://api.simplelocalize.io/api/v2/translations/bulk"
+    private static endpointUploadKeys = "https://api.simplelocalize.io/api/v1/translation-keys/bulk"
+
+    private apiKey: string;
+    private projectToken: string;
+    private cdnLoadPathBase: string;
+    private translationFetchMode: "cdn" | "api";
+
+
+    constructor(apiKey: string,
+                projectToken: string,
+                translationFetchMode: "cdn" | "api") {
+
+        super();
+
+        this.projectToken = projectToken;
+        this.apiKey = apiKey;
+        this.translationFetchMode = translationFetchMode;
+        const environment = "_latest"; // or "_production"
+        this.cdnLoadPathBase = `${SimplelocalizeBackendApiClient.cdnBaseUrl}/${this.projectToken}/${environment}`;
+    }
+
+
+
+
+    async allLanguages(): Promise<LanguageDefImpl[]> {
+        const resp = await fetch(`${this.cdnLoadPathBase}/_languages`, /*{cache: "force-cache"}*/);
         if (!resp.ok) {
             throw new Error("can't load languages: " + resp.status + ", " + (await resp.text()));
         }
@@ -105,69 +107,52 @@ export class SimplelocalizeBackendApiClient {
     }
 
 
-
-    public static missingKeyHandler: MissingKeyHandler = (lngs: readonly string[],
-                                                          ns: string,
-                                                          key: string,
-                                                          fallbackValue: string,
-                                                          updateMissing: boolean,
-                                                          options: any): void => {
-
-        // console.log("received missing key: ", lngs, ns, key, fallbackValue/*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
-
-        lngs.forEach((lng) => {
-
-            const missingKey: UpdatedKey = {language: lng, namespace: ns, key: key};
-            /*
-             * by checking the presence of the key we ensure that only the first update will be taken into account
-             * here we rely on the fact that the fallback lng translation is queried first
-             * see I18nStore.i18nForNodokuImpl for details, when i18n.getFixedT is called prior to i18n.t
-             */
-            if (!SimplelocalizeBackendApiClient.missingKeysRequests.has(missingKey)) {
-                SimplelocalizeBackendApiClient.missingKeysRequests.set(missingKey, fallbackValue);
-            }
-        })
+    public override translationToResource(allLng: readonly string[], allNs: readonly string[]): Promise</*AllLanguagesAllNamespacesTranslationResource*/Resource> {
+        switch (this.translationFetchMode) {
+            case "api":
+                return SimplelocalizeBackendApiClient.loadTranslationsUsingApi(this, allLng, allNs);
+            case "cdn":
+                return SimplelocalizeBackendApiClient.loadTranslationsUsingCdn(this, allLng, allNs);
+        }
 
     }
 
+    public static async loadTranslationsUsingCdn(client: SimplelocalizeBackendApiClient, allLng: readonly string[], allNs: readonly string[]): Promise<Resource> {
 
-    static onFallbackLanguageValueChange(language: string, namespace: string, key: string, text: string): void {
-
-        const missingKey: UpdatedKey = {language: language, namespace: namespace, key: key};
-
-        SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.set(missingKey, text)
-
-    }
-
-    static resourceLoader: TranslationResourceLoader = environment === '_latest' ?
-        SimplelocalizeBackendApiClient.loadTranslationsUsingApi :
-        SimplelocalizeBackendApiClient.loadTranslationsUsingCdn;
-
-    private static async loadTranslationsUsingCdn(allLng: readonly string[], allNs: readonly string[]): Promise<AllLanguagesAllNamespacesTranslationResource> {
-
-        const res: AllLanguagesAllNamespacesTranslationResource = {};
+        const res: Resource = {};
 
         await Promise.all(allLng.map(async (language: string): Promise<void> => {
+            if (!res.hasOwnProperty(language)) {
+                res[language] = {};
+            }
             await Promise.all(allNs.map(async (ns: string): Promise<void> => {
-                console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${loadPathBase}/${language}/${ns}`);
-                const resp = await fetch(`${loadPathBase}/${language}/${ns}`);
+                if (!res[language].hasOwnProperty(ns)) {
+                    res[language][ns] = {}
+                }
+                console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${client.cdnLoadPathBase}/${language}/${ns}`);
+                const resp = await fetch(`${client.cdnLoadPathBase}/${language}/${ns}`);
                 const reply = await resp.json();
-                console.log("this is reply", language, ns, reply);
-                return reply;
+                // console.log("this is reply", language, ns, reply);
+                res[language][ns] = reply;
             }))
         }))
 
+        // console.log("_______translatedReply_______", allLng, allNs, res)
         return res;
     }
 
-    private static async loadTranslationsUsingApi(allLng: readonly string[], allNs: readonly string[]): Promise<AllLanguagesAllNamespacesTranslationResource> {
+    public static async loadTranslationsUsingApi(client: SimplelocalizeBackendApiClient, allLng: readonly string[], allNs: readonly string[]): Promise<Resource> {
+
         console.log("querying the language on API ", allLng.join(", "), " on namespace ", allNs, "url", `${loadTranslationsApiBase}`);
+        // console.log("printing callstack", new Error("loadTranslationsUsingApi"))
         let finished = false;
         let page = 0;
-        const translatedReply: AllLanguagesAllNamespacesTranslationResource = {};
+        const translatedReply: Resource = {};
         let retries: number = 10;
+        // console.log("in simplelocalize backend client ", this)
+        const apiKey = client.apiKey;
         while (!finished && retries >= 0) {
-            const resp = await fetch(`${loadTranslationsApiBase}?page=${page}`, {
+            const resp: Response = await fetch(`${loadTranslationsApiBase}?page=${page}`, {
                 method: 'GET',
                 mode: 'cors',
                 headers: {
@@ -180,7 +165,7 @@ export class SimplelocalizeBackendApiClient {
                 .catch(reason => {throw new Error("can't download translations: ", reason)});
 
             if (!resp || resp.status != 200) {
-                throw new Error("can't retrieve translations: " + resp.body);
+                throw new Error("can't retrieve translations: " + (await resp?.text()));
             }
 
             const text = await (resp.text());
@@ -210,10 +195,8 @@ export class SimplelocalizeBackendApiClient {
                     if (!translatedReply[language].hasOwnProperty(namespace)) {
                         translatedReply[language][namespace] = {}
                     }
-                    translatedReply[language][namespace][key] = text;
-                    // if (language === "it") {
-                    //     console.log("translatedReply[language][namespace][key] = text", language, namespace, key, text)
-                    // }
+                    const l = translatedReply[language][namespace] as {[key: string]: string};
+                    l[key] = text;
                 });
 
                 page++;
@@ -240,59 +223,7 @@ export class SimplelocalizeBackendApiClient {
         return translatedReply;
     }
 
-    static async pushMissingKeys() {
-
-        const shoulReload =
-            SimplelocalizeBackendApiClient.missingKeysRequests.size() > 0 ||
-            SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.size() > 0;
-
-        if (SimplelocalizeBackendApiClient.missingKeysRequests.size() > 0) {
-
-            const chunks: UpdatingValue[][] =
-                SimplelocalizeBackendApiClient.flatReqsChunked(SimplelocalizeBackendApiClient.missingKeysRequests, 100)
-
-            for (const reqs of chunks) {
-                await SimplelocalizeBackendApiClient.pushKeys(reqs.map(r => r.updKey))
-                await SimplelocalizeBackendApiClient.updateTranslations(reqs)
-
-                reqs.forEach((v: UpdatingValue) => {
-                    SimplelocalizeBackendApiClient.missingKeysRequests.delete(v.updKey)
-                })
-            }
-
-        }
-
-        if (SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.size() > 0) {
-
-            const chunks: UpdatingValue[][] =
-                SimplelocalizeBackendApiClient.flatReqsChunked(SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated, 100)
-
-
-            for (const reqs of chunks) {
-                if (SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy === OnFallbackLngTextUpdateStrategyImpl.delete_translations) {
-                    await SimplelocalizeBackendApiClient.deleteKeys(reqs.map(k => k.updKey))
-                    await SimplelocalizeBackendApiClient.pushKeys(reqs.map(k => k.updKey))
-                } else if (SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy === OnFallbackLngTextUpdateStrategyImpl.reset_reviewed_status) {
-                    await SimplelocalizeBackendApiClient.removeReviewed(reqs)
-                } else if (SimplelocalizeBackendApiClient.onFallbackLngTextUpdateStrategy === OnFallbackLngTextUpdateStrategyImpl.update_fallback_lng_only) {
-                    //
-                }
-                await SimplelocalizeBackendApiClient.updateTranslations(reqs)
-
-                reqs.forEach((v: UpdatingValue) => {
-                    SimplelocalizeBackendApiClient.fallbackLanguageValuesToBeUpdated.delete(v.updKey)
-                })
-            }
-        }
-
-        if (shoulReload) {
-            await I18nStore.reloadResources();
-            console.log("resources reloaded...")
-        }
-
-    }
-
-    private static async pushKeys(reqs: UpdatedKey[]): Promise<void> {
+    public override async pushKeys(reqs: UpdatedKey[]): Promise<void> {
         const requestBodyKeys = {
             translationKeys: reqs.map((r: UpdatedKey) => {return {key: r.key, namespace: r.namespace}})
         }
@@ -301,7 +232,7 @@ export class SimplelocalizeBackendApiClient {
             mode: 'cors',
             headers: {
                 'Content-Type': 'application/json',
-                'X-SimpleLocalize-Token': apiKey
+                'X-SimpleLocalize-Token': this.apiKey
             },
             body: JSON.stringify(requestBodyKeys),
         });
@@ -310,7 +241,7 @@ export class SimplelocalizeBackendApiClient {
 
     }
 
-    private static async updateTranslations(reqs: UpdatingValue[]): Promise<void> {
+    public override async updateTranslations(reqs: UpdatingValue[]): Promise<void> {
         const requestBodyTranslations = {
             translations: reqs.map(r => {return {...r.updKey, text: r.text, reviewStatus: "REVIEWED"}})
         }
@@ -322,7 +253,7 @@ export class SimplelocalizeBackendApiClient {
             mode: 'cors',
             headers: {
                 'Content-Type': 'application/json',
-                'X-SimpleLocalize-Token': apiKey
+                'X-SimpleLocalize-Token': this.apiKey
             },
             body: JSON.stringify(requestBodyTranslations),
         })
@@ -331,7 +262,7 @@ export class SimplelocalizeBackendApiClient {
 
     }
 
-    private static async removeReviewed(reqs: UpdatingValue[]): Promise<void> {
+    public override async removeReviewedStatus(reqs: UpdatingValue[]): Promise<void> {
 
 
         const requestBodyTranslations: {
@@ -346,7 +277,7 @@ export class SimplelocalizeBackendApiClient {
             translations: []
         }
 
-        const allLanguages: LanguageDefImpl[] = await SimplelocalizeBackendApiClient.allLanguagesImpl();
+        const allLanguages: LanguageDefImpl[] = await this.allLanguages();
 
         reqs.forEach(r => {
 
@@ -357,7 +288,7 @@ export class SimplelocalizeBackendApiClient {
                         language: lng.key,
                         namespace: r.updKey.namespace,
                         key: r.updKey.key,
-                        text: I18nStore.translate(lng.key, r.updKey.namespace, r.updKey.key),
+                        text: r.text, //this.i18nStore.translate(lng.key, r.updKey.namespace, r.updKey.key),
                         reviewStatus: "NOT_REVIEWED"
                     })
                 })
@@ -370,7 +301,7 @@ export class SimplelocalizeBackendApiClient {
             mode: 'cors',
             headers: {
                 'Content-Type': 'application/json',
-                'X-SimpleLocalize-Token': apiKey
+                'X-SimpleLocalize-Token': this.apiKey
             },
             body: JSON.stringify(requestBodyTranslations),
         })
@@ -379,7 +310,7 @@ export class SimplelocalizeBackendApiClient {
 
     }
 
-    private static async deleteKeys(reqs: UpdatedKey[]): Promise<void> {
+    public async deleteKeys(reqs: UpdatedKey[]): Promise<void> {
         const requestBodyKeys: {
             translationKeys: { key: string, namespace: string }[],
         } = {
@@ -402,29 +333,13 @@ export class SimplelocalizeBackendApiClient {
             mode: 'cors',
             headers: {
                 'Content-Type': 'application/json',
-                'X-SimpleLocalize-Token': apiKey
+                'X-SimpleLocalize-Token': this.apiKey
             },
             body: JSON.stringify(requestBodyKeys),
         });
         const json  = await resp.json();
         console.log("deleted keys", requestBodyKeys, JSON.stringify(json));
 
-    }
-
-    private static flatReqsChunked(reqsAsMap: Dictionary<UpdatedKey, string>, chunkSize: number): UpdatingValue[][] {
-        const flatReqs: UpdatingValue[] = [];
-        reqsAsMap.entries().forEach((v) => {
-            flatReqs.push({updKey: {language: v[0].language, namespace: v[0].namespace, key: v[0].key}, text: v[1]});
-        })
-
-        console.log(flatReqs[0])
-
-        const chunks: UpdatingValue[][] = []
-        for (let i = 0; i < flatReqs.length; i += chunkSize) {
-            chunks.push(flatReqs.slice(i, i + chunkSize));
-        }
-
-        return chunks;
     }
 
 }

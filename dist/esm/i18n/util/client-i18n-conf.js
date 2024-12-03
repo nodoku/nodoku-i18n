@@ -2,9 +2,9 @@
 // import {initReactI18next, useTranslation} from "react-i18next";
 // import resourcesToBackend from "i18next-resources-to-backend";
 // import {getOptions} from "./settings";
-var runsOnServerSide = typeof window === 'undefined';
-export var cdnBaseUrl = "https://cdn.simplelocalize.io";
-export var environment = "_latest"; // or "_production"
+const runsOnServerSide = typeof window === 'undefined';
+export const cdnBaseUrl = "https://cdn.simplelocalize.io";
+export const environment = "_latest"; // or "_production"
 // const translationToResource = async (language: string, ns: string) => {
 //     console.log("querying the language ", language, " on namespace ", ns);
 //     let backendUrl;

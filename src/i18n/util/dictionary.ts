@@ -1,4 +1,11 @@
-import {pick} from "next/dist/lib/pick";
+
+export type UpdatedKey = {language: string; namespace: string; key: string}
+
+export interface UpdatingValue {
+    updKey: UpdatedKey;
+    text: string;
+}
+
 
 export class Dictionary<K, V> {
 

@@ -1,3 +1,12 @@
+export type UpdatedKey = {
+    language: string;
+    namespace: string;
+    key: string;
+};
+export interface UpdatingValue {
+    updKey: UpdatedKey;
+    text: string;
+}
 export declare class Dictionary<K, V> {
     private internalMap;
     get(k: K): V | undefined;
