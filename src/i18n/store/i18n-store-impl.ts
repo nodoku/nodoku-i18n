@@ -1,6 +1,6 @@
-import {createInstance, i18n, InitOptions, Resource, ResourceKey, ResourceLanguage} from "i18next";
+import {createInstance, i18n, InitOptions} from "i18next";
 import {NdTranslatableText} from "nodoku-core";
-import {delay, AbstractI18nStore} from "./abstract-i18n-store";
+import {AbstractI18nStore, delay} from "./abstract-i18n-store";
 import {TranslationBackendClient} from "../backend/translation-backend-client";
 import {MissingKeyStorage} from "../backend/missing-key-storage";
 import {LanguageDefImpl} from "../util/language-def-impl";
@@ -27,25 +27,24 @@ export class I18nStoreImpl extends AbstractI18nStore {
 
     public static createStore(): I18nStoreImpl {
 
-        const store: I18nStoreImpl = new I18nStoreImpl();
-        return store;
+        return new I18nStoreImpl();
     }
 
     public async initStore(allLngs: readonly string[],
                            nampespaces: readonly string[],
                            fallbackLng: string,
                            saveMissing: boolean,
-                           loadImmediately: boolean,
+                           loadOnInit: boolean,
                            client: TranslationBackendClient,
                            missingKeyStorage: MissingKeyStorage): Promise<void> {
 
-        console.log("this.sharedI18n defined", this.sharedI18n !== undefined)
+        // console.log("this.sharedI18n defined", this.sharedI18n !== undefined)
 
         if (this.sharedI18n !== undefined) {
 
 
 
-            if (loadImmediately) {
+            if (loadOnInit) {
                 console.log("this.sharedI18n defined, and refetching resources...")
                 await I18nStoreImpl.reloadResourcesForI18n(this.sharedI18n);
             }
@@ -67,14 +66,14 @@ export class I18nStoreImpl extends AbstractI18nStore {
 
         const instanceInCreation: i18n =  await this.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, client, missingKeyStorage/*resourceLoader, missingKeyHandler*/);
 
-        if (!loadImmediately) {
+        if (!loadOnInit) {
             await I18nStoreImpl.reloadResourcesForI18n(instanceInCreation);
         }
 
         this.sharedI18n = instanceInCreation;
         this.isInitStarted = false;
 
-        console.log("this.sharedI18n defined", this.sharedI18n !== undefined, this.ref)
+        // console.log("this.sharedI18n defined", this.sharedI18n !== undefined, this.ref)
 
     }
 
@@ -122,12 +121,6 @@ export class I18nStoreImpl extends AbstractI18nStore {
 
             console.log("reloaded translation resources for ", (options.supportedLngs as string[]).join(", "),
                 "fallbackLng", fallbackLng)
-
-            const l: Resource = options.resources as Resource;
-            const l1: ResourceLanguage = l["ru"];
-            const l2: ResourceKey = l1["getting-started"]
-            const l3 = (l2 as {[key: string]: string})["sectionName=getting-started-block-0.title"];
-            console.log("this is l3", l3, i18nInstance.getFixedT("ru", "getting-started")("sectionName=getting-started-block-0.title", {returnDetails: true}))
 
         }
 

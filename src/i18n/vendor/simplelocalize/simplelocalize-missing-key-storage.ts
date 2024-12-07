@@ -157,7 +157,7 @@ export class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
             flatReqs.push({updKey: {language: v[0].language, namespace: v[0].namespace, key: v[0].key}, text: v[1]});
         })
 
-        console.log(flatReqs[0])
+        // console.log(flatReqs[0])
 
         const chunks: UpdatingValue[][] = []
         for (let i = 0; i < flatReqs.length; i += chunkSize) {

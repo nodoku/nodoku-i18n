@@ -1,5 +1,5 @@
 import { createInstance } from "i18next";
-import { delay, AbstractI18nStore } from "./abstract-i18n-store";
+import { AbstractI18nStore, delay } from "./abstract-i18n-store";
 export class I18nStoreImpl extends AbstractI18nStore {
     constructor() {
         super();
@@ -11,13 +11,12 @@ export class I18nStoreImpl extends AbstractI18nStore {
         return this.ref;
     }
     static createStore() {
-        const store = new I18nStoreImpl();
-        return store;
+        return new I18nStoreImpl();
     }
-    async initStore(allLngs, nampespaces, fallbackLng, saveMissing, loadImmediately, client, missingKeyStorage) {
-        console.log("this.sharedI18n defined", this.sharedI18n !== undefined);
+    async initStore(allLngs, nampespaces, fallbackLng, saveMissing, loadOnInit, client, missingKeyStorage) {
+        // console.log("this.sharedI18n defined", this.sharedI18n !== undefined)
         if (this.sharedI18n !== undefined) {
-            if (loadImmediately) {
+            if (loadOnInit) {
                 console.log("this.sharedI18n defined, and refetching resources...");
                 await I18nStoreImpl.reloadResourcesForI18n(this.sharedI18n);
             }
@@ -35,12 +34,12 @@ export class I18nStoreImpl extends AbstractI18nStore {
         }
         this.isInitStarted = true;
         const instanceInCreation = await this.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, client, missingKeyStorage /*resourceLoader, missingKeyHandler*/);
-        if (!loadImmediately) {
+        if (!loadOnInit) {
             await I18nStoreImpl.reloadResourcesForI18n(instanceInCreation);
         }
         this.sharedI18n = instanceInCreation;
         this.isInitStarted = false;
-        console.log("this.sharedI18n defined", this.sharedI18n !== undefined, this.ref);
+        // console.log("this.sharedI18n defined", this.sharedI18n !== undefined, this.ref)
     }
     allLanguages() {
         if (!this.client) {
@@ -71,11 +70,6 @@ export class I18nStoreImpl extends AbstractI18nStore {
             options.resources = await client.translationToResource(options.supportedLngs, namespaces);
             await i18nInstance.init(options);
             console.log("reloaded translation resources for ", options.supportedLngs.join(", "), "fallbackLng", fallbackLng);
-            const l = options.resources;
-            const l1 = l["ru"];
-            const l2 = l1["getting-started"];
-            const l3 = l2["sectionName=getting-started-block-0.title"];
-            console.log("this is l3", l3, i18nInstance.getFixedT("ru", "getting-started")("sectionName=getting-started-block-0.title", { returnDetails: true }));
         }
     }
     createOptions(allLngs, namespaces, fallbackLng, saveMissing, client, missingKeyStorage) {

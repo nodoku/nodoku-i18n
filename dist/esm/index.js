@@ -12,14 +12,14 @@ export var NodokuI18n;
     (function (Simplelocalize) {
         Simplelocalize.OnFallbackLngTextUpdateStrategy = OnFallbackLngTextUpdateStrategyImpl;
         Simplelocalize.OnMissingKeyStrategy = OnMissingKeyStrategyImpl;
-        async function initI18nStore(apiKey, projectToken, allLlngs, nampespaces, fallbackLng, translationFetchMode, saveMissing, loadImmediately, onMissingKeyStrategy, onFallbackLngTextUpdateStrategy) {
+        async function initI18nStore(apiKey, projectToken, allLlngs, nampespaces, fallbackLng, translationFetchMode, saveMissing, loadOnInit, onMissingKeyStrategy, onFallbackLngTextUpdateStrategy) {
             const i18nStore = I18nStoreImpl.createStore();
             const client = new SimplelocalizeBackendApiClient(apiKey, projectToken, translationFetchMode);
             const missingKeyStorage = new SimplelocalizeMissingKeyStorage(i18nStore, onMissingKeyStrategy, onFallbackLngTextUpdateStrategy);
             console.log("initialized client...");
             console.log("in initI18nStore allLlngs, saveMissing, devMode", allLlngs, saveMissing, translationFetchMode);
             const lngs = allLlngs === "all" ? (await client.allLanguages()).map(ld => ld.key) : allLlngs;
-            await i18nStore.initStore(lngs, nampespaces, fallbackLng, saveMissing, loadImmediately, client, missingKeyStorage);
+            await i18nStore.initStore(lngs, nampespaces, fallbackLng, saveMissing, loadOnInit, client, missingKeyStorage);
             if (saveMissing && onMissingKeyStrategy === OnMissingKeyStrategyImpl.upload) {
                 setInterval(() => missingKeyStorage.pushMissingKeys(client), 10000);
             }

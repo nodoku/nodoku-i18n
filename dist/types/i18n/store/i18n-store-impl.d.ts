@@ -12,7 +12,7 @@ export declare class I18nStoreImpl extends AbstractI18nStore {
     private constructor();
     getRef(): number;
     static createStore(): I18nStoreImpl;
-    initStore(allLngs: readonly string[], nampespaces: readonly string[], fallbackLng: string, saveMissing: boolean, loadImmediately: boolean, client: TranslationBackendClient, missingKeyStorage: MissingKeyStorage): Promise<void>;
+    initStore(allLngs: readonly string[], nampespaces: readonly string[], fallbackLng: string, saveMissing: boolean, loadOnInit: boolean, client: TranslationBackendClient, missingKeyStorage: MissingKeyStorage): Promise<void>;
     allLanguages(): Promise<LanguageDefImpl[]>;
     private createAndInitI18next;
     reloadResources(): Promise<void>;

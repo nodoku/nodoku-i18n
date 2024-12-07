@@ -12,7 +12,7 @@ export declare namespace NodokuI18n {
         const OnFallbackLngTextUpdateStrategy: typeof OnFallbackLngTextUpdateStrategyImpl;
         type OnMissingKeyStrategy = OnMissingKeyStrategyImpl;
         const OnMissingKeyStrategy: typeof OnMissingKeyStrategyImpl;
-        function initI18nStore(apiKey: string, projectToken: string, allLlngs: readonly string[] | "all", nampespaces: readonly string[], fallbackLng: string, translationFetchMode: "cdn" | "api", saveMissing: boolean, loadImmediately: boolean, onMissingKeyStrategy: OnMissingKeyStrategy, onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy): Promise<I18nStore>;
+        function initI18nStore(apiKey: string, projectToken: string, allLlngs: readonly string[] | "all", nampespaces: readonly string[], fallbackLng: string, translationFetchMode: "cdn" | "api", saveMissing: boolean, loadOnInit: boolean, onMissingKeyStrategy: OnMissingKeyStrategy, onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy): Promise<I18nStore>;
         function i18nForNodoku(store: AbstractI18nStore): I18nextProvider;
     }
 }

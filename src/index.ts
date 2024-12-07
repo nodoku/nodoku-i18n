@@ -32,7 +32,7 @@ export namespace NodokuI18n {
                                             fallbackLng: string,
                                             translationFetchMode: "cdn" | "api",
                                             saveMissing: boolean,
-                                            loadImmediately: boolean,
+                                            loadOnInit: boolean,
                                             onMissingKeyStrategy: OnMissingKeyStrategy,
                                             onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy): Promise<I18nStore> {
 
@@ -52,7 +52,7 @@ export namespace NodokuI18n {
             const lngs: readonly string[] = allLlngs === "all" ? (await client.allLanguages()).map(ld => ld.key) : allLlngs;
 
 
-            await i18nStore.initStore(lngs, nampespaces, fallbackLng, saveMissing, loadImmediately, client, missingKeyStorage);
+            await i18nStore.initStore(lngs, nampespaces, fallbackLng, saveMissing, loadOnInit, client, missingKeyStorage);
 
             if (saveMissing && onMissingKeyStrategy === OnMissingKeyStrategyImpl.upload) {
                 setInterval(() => missingKeyStorage.pushMissingKeys(client!), 10000)

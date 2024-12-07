@@ -93,7 +93,7 @@ export class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
         reqsAsMap.entries().forEach((v) => {
             flatReqs.push({ updKey: { language: v[0].language, namespace: v[0].namespace, key: v[0].key }, text: v[1] });
         });
-        console.log(flatReqs[0]);
+        // console.log(flatReqs[0])
         const chunks = [];
         for (let i = 0; i < flatReqs.length; i += chunkSize) {
             chunks.push(flatReqs.slice(i, i + chunkSize));

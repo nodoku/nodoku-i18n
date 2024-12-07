@@ -18,7 +18,7 @@ const updated = parsed.updated;
 console.log("uploading missing", missing);
 const projectToken = process.env.SIMPLELOCALIZE_PROJECT_TOKEN || "n-a";
 const apiKey = process.env.SIMPLELOCALIZE_API_KEY || "n-a";
-console.log("projectToken", projectToken, "apiKey", apiKey);
+// console.log("projectToken", projectToken, "apiKey", apiKey)
 const client = new SimplelocalizeBackendApiClient(apiKey, projectToken, "cdn");
 const missingKeysRequests = new Dictionary();
 const fallbackLanguageValuesToBeUpdated = new Dictionary();

@@ -11,8 +11,6 @@ export abstract class MissingKeyStorage {
                           updateMissing: boolean,
                           options: any): void;
 
-
     abstract pushMissingKeys(client: TranslationBackendClient): Promise<void>;
-
 
 }

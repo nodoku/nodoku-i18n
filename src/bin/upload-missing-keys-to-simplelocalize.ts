@@ -27,7 +27,7 @@ console.log("uploading missing", missing);
 const projectToken: string = process.env.SIMPLELOCALIZE_PROJECT_TOKEN || "n-a";
 const apiKey: string = process.env.SIMPLELOCALIZE_API_KEY || "n-a";
 
-console.log("projectToken", projectToken, "apiKey", apiKey)
+// console.log("projectToken", projectToken, "apiKey", apiKey)
 
 const client = new SimplelocalizeBackendApiClient(apiKey, projectToken, "cdn");
 
