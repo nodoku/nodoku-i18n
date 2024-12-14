@@ -1,5 +1,5 @@
 import {LanguageDefImpl} from "./i18n/util/language-def-impl";
-import {I18nextProvider, NdTranslatableText} from "nodoku-core";
+import {NdI18nextProvider, NdTranslatableText} from "nodoku-core";
 import {I18nStoreImpl} from "./i18n/store/i18n-store-impl";
 import {
     OnFallbackLngTextUpdateStrategyImpl,
@@ -63,7 +63,7 @@ export namespace NodokuI18n {
         }
 
 
-        export function i18nForNodoku(store: AbstractI18nStore): I18nextProvider {
+        export function i18nForNodoku(store: AbstractI18nStore): NdI18nextProvider {
             return async (lng: string): Promise<{t: (text: NdTranslatableText) => string}> => {
                 return {t: (text: NdTranslatableText) => store.translateTranslatableText(lng, text)};
             }

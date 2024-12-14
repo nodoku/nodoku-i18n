@@ -1,4 +1,4 @@
-import { delay } from "../../store/abstract-i18n-store";
+import { delay } from "../../store/abstract-i18n-store.js";
 import { TranslationBackendClient } from "../../backend/translation-backend-client.js";
 const runsOnServerSide = typeof window === 'undefined';
 if (!runsOnServerSide) {

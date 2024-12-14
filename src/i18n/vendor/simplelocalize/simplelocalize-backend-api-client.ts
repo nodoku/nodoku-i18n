@@ -1,6 +1,6 @@
 import {Resource} from "i18next";
 import {LanguageDefImpl} from "../../util/language-def-impl.js";
-import {delay} from "../../store/abstract-i18n-store";
+import {delay} from "../../store/abstract-i18n-store.js";
 import {UpdatedKey, UpdatingValue} from "../../util/dictionary.js";
 import {TranslationBackendClient} from "../../backend/translation-backend-client.js";
 
