@@ -1,8 +1,8 @@
 import {Resource} from "i18next";
 import {LanguageDefImpl} from "../../util/language-def-impl.js";
-import {delay} from "../../store/abstract-i18n-store.js";
 import {UpdatedKey, UpdatingValue} from "../../util/dictionary.js";
 import {TranslationBackendClient} from "../../backend/translation-backend-client.js";
+import {delay} from "../../../index";
 
 const runsOnServerSide = typeof window === 'undefined'
 
@@ -15,54 +15,8 @@ const loadTranslationsApiBase = "https://api.simplelocalize.io/api/v2/translatio
 
 
 
-/*
- * the strategy to undertake when there is a difference between the value provided in the content block, and the value
- * recorded as the value of the fallback language.
- *
- * That the fallback language is by definition the language in which the content is written. Hence, for a given translation key,
- * it is the value provided by the content, takes precedence.
- *
- * For the translation key, the translation corresponding to the fallback language should always be equal to the value
- * provided by the content for the same translation key.
- *
- * Consequently, it may so happen that this equivalence doesn't hold anymore, when the content changes for a given
- * translation key (markdown file content modified, for example).
- *
- * If such situation is detected, we should update the value of translation for the fallback language for the
- * translation key concerned.
- *
- * When the translation value is updated, the corresponding translation on other languages may not correspond anymore
- * to this new value.
- *
- * And in this case several strategies are possible:
- *
- * - update_fallback_lng_only:
- *      update the value of the translation for fallback language, and stop there, don't do anything else
- *
- * - delete_translations:
- *      * update the value of the translation for fallback language
- *      * delete translations (if present) for other languages, thus indicating that the new translations should be provided
- *
- * - reset_reviewed_status:
- *      * update the value of the translation for fallback language
- *      * remove the REVIEWED flag from the translations for other languages
- *
- * Which strategy to use is up to the user of the library to choose.
- * By default, strategy 'reset_reviewed_status' is used
- */
-export enum OnFallbackLngTextUpdateStrategyImpl {
 
-    update_fallback_lng_only,
-    delete_translations,
-    reset_reviewed_status
-}
-
-export enum OnMissingKeyStrategyImpl {
-    upload, save_to_file
-}
-
-
-export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
+export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient {
 
     private static cdnBaseUrl = "https://cdn.simplelocalize.io";
     private static endpointUpdateKeys = "https://api.simplelocalize.io/api/v2/translations/bulk"
@@ -84,7 +38,7 @@ export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
         this.apiKey = apiKey;
         this.translationFetchMode = translationFetchMode;
         const environment = "_latest"; // or "_production"
-        this.cdnLoadPathBase = `${SimplelocalizeBackendApiClient.cdnBaseUrl}/${this.projectToken}/${environment}`;
+        this.cdnLoadPathBase = `${SimplelocalizeBackendApiClientImpl.cdnBaseUrl}/${this.projectToken}/${environment}`;
     }
 
 
@@ -110,14 +64,14 @@ export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
     public override translationToResource(allLng: readonly string[], allNs: readonly string[]): Promise</*AllLanguagesAllNamespacesTranslationResource*/Resource> {
         switch (this.translationFetchMode) {
             case "api":
-                return SimplelocalizeBackendApiClient.loadTranslationsUsingApi(this, allLng, allNs);
+                return SimplelocalizeBackendApiClientImpl.loadTranslationsUsingApi(this, allLng, allNs);
             case "cdn":
-                return SimplelocalizeBackendApiClient.loadTranslationsUsingCdn(this, allLng, allNs);
+                return SimplelocalizeBackendApiClientImpl.loadTranslationsUsingCdn(this, allLng, allNs);
         }
 
     }
 
-    public static async loadTranslationsUsingCdn(client: SimplelocalizeBackendApiClient, allLng: readonly string[], allNs: readonly string[]): Promise<Resource> {
+    public static async loadTranslationsUsingCdn(client: SimplelocalizeBackendApiClientImpl, allLng: readonly string[], allNs: readonly string[]): Promise<Resource> {
 
         const res: Resource = {};
 
@@ -141,7 +95,7 @@ export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
         return res;
     }
 
-    public static async loadTranslationsUsingApi(client: SimplelocalizeBackendApiClient, allLng: readonly string[], allNs: readonly string[]): Promise<Resource> {
+    public static async loadTranslationsUsingApi(client: SimplelocalizeBackendApiClientImpl, allLng: readonly string[], allNs: readonly string[]): Promise<Resource> {
 
         console.log("querying the language on API ", allLng.join(", "), " on namespace ", allNs, "url", `${loadTranslationsApiBase}`);
         // console.log("printing callstack", new Error("loadTranslationsUsingApi"))
@@ -227,7 +181,7 @@ export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
         const requestBodyKeys = {
             translationKeys: reqs.map((r: UpdatedKey) => {return {key: r.key, namespace: r.namespace}})
         }
-        const resp = await fetch(SimplelocalizeBackendApiClient.endpointUploadKeys, {
+        const resp = await fetch(SimplelocalizeBackendApiClientImpl.endpointUploadKeys, {
             method: 'POST',
             mode: 'cors',
             headers: {
@@ -248,7 +202,7 @@ export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
 
         // console.log(`[SimpleLocalize] Pushing updated translations: ${reqs.length}`, requestBodyTranslations);
 
-        const resp: Response = await fetch(SimplelocalizeBackendApiClient.endpointUpdateKeys, {
+        const resp: Response = await fetch(SimplelocalizeBackendApiClientImpl.endpointUpdateKeys, {
             method: 'PATCH',
             mode: 'cors',
             headers: {
@@ -296,7 +250,7 @@ export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
 
         // console.log(`[SimpleLocalize] Pushing updated translations: ${reqs.length}`, requestBodyTranslations);
 
-        const resp: Response = await fetch(SimplelocalizeBackendApiClient.endpointUpdateKeys, {
+        const resp: Response = await fetch(SimplelocalizeBackendApiClientImpl.endpointUpdateKeys, {
             method: 'PATCH',
             mode: 'cors',
             headers: {
@@ -328,7 +282,7 @@ export class SimplelocalizeBackendApiClient extends TranslationBackendClient {
 
         // console.log(`[SimpleLocalize] Pushing updated translations: ${reqs.length}`, requestBodyTranslations);
 
-        const resp: Response = await fetch(SimplelocalizeBackendApiClient.endpointUploadKeys, {
+        const resp: Response = await fetch(SimplelocalizeBackendApiClientImpl.endpointUploadKeys, {
             method: 'DELETE',
             mode: 'cors',
             headers: {

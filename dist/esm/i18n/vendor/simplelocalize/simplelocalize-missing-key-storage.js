@@ -1,17 +1,22 @@
 import * as fs from "node:fs";
 import path from "path";
 import { Dictionary } from "../../util/dictionary.js";
-import { MissingKeyStorage } from "../../backend/missing-key-storage.js";
-import { OnFallbackLngTextUpdateStrategyImpl } from "./simplelocalize-backend-api-client.js";
-import { OnMissingKeyStrategyImpl } from "./simplelocalize-backend-api-client.js";
-export class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
-    constructor(i18nStore, onMissingKeyStrategy, onFallbackLngTextUpdateStrategy) {
+import { MissingKeyStorageImpl, OnFallbackLngTextUpdateStrategyImpl, OnMissingKeyStrategyImpl } from "../../backend/missing-key-storage";
+export class SimplelocalizeMissingKeyStorage extends MissingKeyStorageImpl {
+    constructor(client, 
+    //i18nStore: AbstractI18nStore,
+    onMissingKeyReload, onMissingKeyStrategy, onFallbackLngTextUpdateStrategy) {
         super();
         this.missingKeysRequests = new Dictionary();
         this.fallbackLanguageValuesToBeUpdated = new Dictionary();
-        this.i18nStore = i18nStore;
+        // this.i18nStore = i18nStore;
+        this.client = client;
         this.onMissingKeyStrategy = onMissingKeyStrategy;
         this.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
+        this.onMissingKeyReload = onMissingKeyReload;
+        if (onMissingKeyStrategy === OnMissingKeyStrategyImpl.upload) {
+            setInterval(() => this.pushMissingKeys(this.client), 10000);
+        }
     }
     onMissingKey(lngs, ns, key, fallbackValue, updateMissing, options) {
         console.log("received missing key: ", lngs, ns, key, fallbackValue /*, I18nStore.getI18nByLangByNs('ru')?.store.data*/);
@@ -47,8 +52,9 @@ export class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
         const shoulReload = this.missingKeysRequests.size() > 0 ||
             this.fallbackLanguageValuesToBeUpdated.size() > 0;
         await SimplelocalizeMissingKeyStorage.pushMissingKeysForClient(client, this.missingKeysRequests, this.fallbackLanguageValuesToBeUpdated, this.onFallbackLngTextUpdateStrategy);
-        if (shoulReload) {
-            await this.i18nStore.reloadResources();
+        if (shoulReload && this.onMissingKeyReload) {
+            // await this.i18nStore.reloadResources();
+            await this.onMissingKeyReload();
             console.log("resources reloaded...");
         }
         this.missingKeysRequests = new Dictionary();

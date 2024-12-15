@@ -1,9 +1,10 @@
 import {createInstance, i18n, InitOptions} from "i18next";
 import {NdTranslatableText} from "nodoku-core";
-import {AbstractI18nStore, delay} from "./abstract-i18n-store";
+import {AbstractI18nStore} from "./abstract-i18n-store";
 import {TranslationBackendClient} from "../backend/translation-backend-client";
-import {MissingKeyStorage} from "../backend/missing-key-storage";
+import {MissingKeyStorageImpl} from "../backend/missing-key-storage";
 import {LanguageDefImpl} from "../util/language-def-impl";
+import {delay} from "../../index";
 
 
 export class I18nStoreImpl extends AbstractI18nStore {
@@ -11,7 +12,7 @@ export class I18nStoreImpl extends AbstractI18nStore {
     private sharedI18n: i18n | undefined = undefined;
     private isInitStarted: boolean = false;
     private client?: TranslationBackendClient;
-    private missingKeyStorage?: MissingKeyStorage;
+    private missingKeyStorage?: MissingKeyStorageImpl;
 
     private ref;
 
@@ -36,7 +37,7 @@ export class I18nStoreImpl extends AbstractI18nStore {
                            saveMissing: boolean,
                            loadOnInit: boolean,
                            client: TranslationBackendClient,
-                           missingKeyStorage: MissingKeyStorage): Promise<void> {
+                           missingKeyStorage: MissingKeyStorageImpl): Promise<void> {
 
         // console.log("this.sharedI18n defined", this.sharedI18n !== undefined)
 
@@ -89,7 +90,7 @@ export class I18nStoreImpl extends AbstractI18nStore {
                                        fallbackLng: string,
                                        saveMissing: boolean,
                                        client: TranslationBackendClient,
-                                       missingKeyStorage: MissingKeyStorage): Promise<i18n> {
+                                       missingKeyStorage: MissingKeyStorageImpl): Promise<i18n> {
 
         this.client = client;
         const i18nInstance: i18n = createInstance()
@@ -131,7 +132,7 @@ export class I18nStoreImpl extends AbstractI18nStore {
                           fallbackLng: string,
                           saveMissing: boolean,
                           client: TranslationBackendClient,
-                          missingKeyStorage: MissingKeyStorage): InitOptions & {client: TranslationBackendClient} {
+                          missingKeyStorage: MissingKeyStorageImpl): InitOptions & {client: TranslationBackendClient} {
 
 
         return {

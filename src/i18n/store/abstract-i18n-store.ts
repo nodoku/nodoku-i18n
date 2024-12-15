@@ -1,7 +1,6 @@
 import {NdTranslatableText} from "nodoku-core";
 import {LanguageDefImpl} from "../util/language-def-impl";
 
-export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export abstract class AbstractI18nStore {
 

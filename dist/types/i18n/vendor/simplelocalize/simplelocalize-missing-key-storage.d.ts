@@ -1,21 +1,18 @@
 import { Dictionary, UpdatedKey } from "../../util/dictionary.js";
-import { MissingKeyStorage } from "../../backend/missing-key-storage.js";
+import { MissingKeyStorageImpl, OnFallbackLngTextUpdateStrategyImpl, OnMissingKeyStrategyImpl } from "../../backend/missing-key-storage";
 import { TranslationBackendClient } from "../../backend/translation-backend-client.js";
-import { AbstractI18nStore } from "../../store/abstract-i18n-store";
-import { NodokuI18n } from "../../../index.js";
-import OnFallbackLngTextUpdateStrategy = NodokuI18n.Simplelocalize.OnFallbackLngTextUpdateStrategy;
-import OnMissingKeyStrategy = NodokuI18n.Simplelocalize.OnMissingKeyStrategy;
-export declare class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
+export declare class SimplelocalizeMissingKeyStorage extends MissingKeyStorageImpl {
     private missingKeysRequests;
     private fallbackLanguageValuesToBeUpdated;
-    private i18nStore;
+    private client;
     private onFallbackLngTextUpdateStrategy;
     private onMissingKeyStrategy;
-    constructor(i18nStore: AbstractI18nStore, onMissingKeyStrategy: OnMissingKeyStrategy, onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy);
+    private onMissingKeyReload;
+    constructor(client: TranslationBackendClient, onMissingKeyReload: () => Promise<void>, onMissingKeyStrategy: OnMissingKeyStrategyImpl, onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl);
     onMissingKey(lngs: readonly string[], ns: string, key: string, fallbackValue: string, updateMissing: boolean, options: any): void;
     private dumpToFile;
     onFallbackLanguageValueChange(language: string, namespace: string, key: string, text: string): void;
     pushMissingKeys(client: TranslationBackendClient): Promise<void>;
-    static pushMissingKeysForClient(client: TranslationBackendClient, missingKeysRequests: Dictionary<UpdatedKey, string>, fallbackLanguageValuesToBeUpdated: Dictionary<UpdatedKey, string>, onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy): Promise<void>;
+    static pushMissingKeysForClient(client: TranslationBackendClient, missingKeysRequests: Dictionary<UpdatedKey, string>, fallbackLanguageValuesToBeUpdated: Dictionary<UpdatedKey, string>, onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl): Promise<void>;
     private static flatReqsChunked;
 }

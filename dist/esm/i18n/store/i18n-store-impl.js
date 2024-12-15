@@ -1,5 +1,6 @@
 import { createInstance } from "i18next";
-import { AbstractI18nStore, delay } from "./abstract-i18n-store";
+import { AbstractI18nStore } from "./abstract-i18n-store";
+import { delay } from "../../index";
 export class I18nStoreImpl extends AbstractI18nStore {
     constructor() {
         super();

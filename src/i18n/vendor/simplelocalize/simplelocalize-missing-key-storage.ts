@@ -1,33 +1,41 @@
 import * as fs from "node:fs";
 import path from "path";
 import {Dictionary, UpdatedKey, UpdatingValue} from "../../util/dictionary.js";
-import {MissingKeyStorage} from "../../backend/missing-key-storage.js";
-import {OnFallbackLngTextUpdateStrategyImpl} from "./simplelocalize-backend-api-client.js";
-import {OnMissingKeyStrategyImpl} from "./simplelocalize-backend-api-client.js";
+import {
+    MissingKeyStorageImpl,
+    OnFallbackLngTextUpdateStrategyImpl,
+    OnMissingKeyStrategyImpl
+} from "../../backend/missing-key-storage";
 import {TranslationBackendClient} from "../../backend/translation-backend-client.js";
-import {AbstractI18nStore} from "../../store/abstract-i18n-store";
-import {NodokuI18n} from "../../../index.js";
-import OnFallbackLngTextUpdateStrategy = NodokuI18n.Simplelocalize.OnFallbackLngTextUpdateStrategy;
-import OnMissingKeyStrategy = NodokuI18n.Simplelocalize.OnMissingKeyStrategy;
 
 
-export class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
+export class SimplelocalizeMissingKeyStorage extends MissingKeyStorageImpl {
 
     private missingKeysRequests: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
     private fallbackLanguageValuesToBeUpdated: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
 
-    private i18nStore: AbstractI18nStore;
-    private onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy;
-    private onMissingKeyStrategy: OnMissingKeyStrategy;
+    // private i18nStore: AbstractI18nStore;
+    private client: TranslationBackendClient;
+    private onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl;
+    private onMissingKeyStrategy: OnMissingKeyStrategyImpl;
+    private onMissingKeyReload: () => Promise<void>;
 
 
-    constructor(i18nStore: AbstractI18nStore,
-                onMissingKeyStrategy: OnMissingKeyStrategy,
-                onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy) {
+    constructor(client: TranslationBackendClient,
+                //i18nStore: AbstractI18nStore,
+                onMissingKeyReload: () => Promise<void>,
+                onMissingKeyStrategy: OnMissingKeyStrategyImpl,
+                onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl) {
         super();
-        this.i18nStore = i18nStore;
+        // this.i18nStore = i18nStore;
+        this.client = client;
         this.onMissingKeyStrategy = onMissingKeyStrategy;
         this.onFallbackLngTextUpdateStrategy = onFallbackLngTextUpdateStrategy;
+        this.onMissingKeyReload = onMissingKeyReload
+
+        if (onMissingKeyStrategy === OnMissingKeyStrategyImpl.upload) {
+            setInterval(() => this.pushMissingKeys(this.client), 10000)
+        }
     }
 
 
@@ -86,8 +94,9 @@ export class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
 
         await SimplelocalizeMissingKeyStorage.pushMissingKeysForClient(client, this.missingKeysRequests, this.fallbackLanguageValuesToBeUpdated, this.onFallbackLngTextUpdateStrategy)
 
-        if (shoulReload) {
-            await this.i18nStore.reloadResources();
+        if (shoulReload && this.onMissingKeyReload) {
+            // await this.i18nStore.reloadResources();
+            await this.onMissingKeyReload();
             console.log("resources reloaded...")
         }
 
@@ -99,7 +108,7 @@ export class SimplelocalizeMissingKeyStorage extends MissingKeyStorage {
     public static async pushMissingKeysForClient(client: TranslationBackendClient,
                                                  missingKeysRequests: Dictionary<UpdatedKey, string>,
                                                  fallbackLanguageValuesToBeUpdated: Dictionary<UpdatedKey, string>,
-                                                 onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategy): Promise<void> {
+                                                 onFallbackLngTextUpdateStrategy: OnFallbackLngTextUpdateStrategyImpl): Promise<void> {
 
         if (missingKeysRequests.size() > 0) {
 

@@ -2,9 +2,10 @@
 
 import * as fs from "node:fs";
 import path from "path";
-import {SimplelocalizeBackendApiClient, OnFallbackLngTextUpdateStrategyImpl} from "../i18n/vendor/simplelocalize/simplelocalize-backend-api-client.js";
+import {SimplelocalizeBackendApiClientImpl} from "../i18n/vendor/simplelocalize/simplelocalize-backend-api-client.js";
 import {UpdatedKey, Dictionary} from "../i18n/util/dictionary.js";
 import {SimplelocalizeMissingKeyStorage} from "../i18n/vendor/simplelocalize/simplelocalize-missing-key-storage.js";
+import {OnFallbackLngTextUpdateStrategyImpl} from "../i18n/backend/missing-key-storage";
 
 
 let missingKeysJson
@@ -29,7 +30,7 @@ const apiKey: string = process.env.SIMPLELOCALIZE_API_KEY || "n-a";
 
 // console.log("projectToken", projectToken, "apiKey", apiKey)
 
-const client = new SimplelocalizeBackendApiClient(apiKey, projectToken, "cdn");
+const client = new SimplelocalizeBackendApiClientImpl(apiKey, projectToken, "cdn");
 
 const missingKeysRequests: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
 const fallbackLanguageValuesToBeUpdated: Dictionary<UpdatedKey, string> = new Dictionary<UpdatedKey, string>();
