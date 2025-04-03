@@ -1,10 +1,10 @@
 import {createInstance, i18n, InitOptions} from "i18next";
 import {NdTranslatableText} from "nodoku-core";
-import {AbstractI18nStore} from "./abstract-i18n-store";
-import {TranslationBackendClient} from "../backend/translation-backend-client";
-import {MissingKeyStorageImpl} from "../backend/missing-key-storage";
-import {LanguageDefImpl} from "../util/language-def-impl";
-import {delay} from "../../index";
+import {AbstractI18nStore} from "./abstract-i18n-store.js";
+import {TranslationBackendClient} from "../backend/translation-backend-client.js";
+import {MissingKeyStorageImpl} from "../backend/missing-key-storage.js";
+import {LanguageDefImpl} from "../util/language-def-impl.js";
+import {delay} from "../../index.js";
 
 
 export class I18nStoreImpl extends AbstractI18nStore {
@@ -21,11 +21,6 @@ export class I18nStoreImpl extends AbstractI18nStore {
         this.ref = Math.random();
     }
 
-    override getRef() {
-        return this.ref;
-    }
-
-
     public static createStore(): I18nStoreImpl {
 
         return new I18nStoreImpl();
@@ -39,14 +34,12 @@ export class I18nStoreImpl extends AbstractI18nStore {
                            client: TranslationBackendClient,
                            missingKeyStorage: MissingKeyStorageImpl): Promise<void> {
 
-        // console.log("this.sharedI18n defined", this.sharedI18n !== undefined)
+        console.log("this.sharedI18n defined", this.sharedI18n !== undefined)
 
         if (this.sharedI18n !== undefined) {
 
-
-
             if (loadOnInit) {
-                console.log("this.sharedI18n defined, and refetching resources...")
+                console.log("this.sharedI18n is already defined, refetching resources...")
                 await I18nStoreImpl.reloadResourcesForI18n(this.sharedI18n);
             }
             return ;
@@ -65,6 +58,7 @@ export class I18nStoreImpl extends AbstractI18nStore {
 
         this.isInitStarted = true;
 
+        console.log("creating and initializing i18next instance...", allLngs)
         const instanceInCreation: i18n =  await this.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, client, missingKeyStorage/*resourceLoader, missingKeyHandler*/);
 
         if (!loadOnInit) {
@@ -73,6 +67,7 @@ export class I18nStoreImpl extends AbstractI18nStore {
 
         this.sharedI18n = instanceInCreation;
         this.isInitStarted = false;
+        this.missingKeyStorage = missingKeyStorage;
 
         // console.log("this.sharedI18n defined", this.sharedI18n !== undefined, this.ref)
 
@@ -95,6 +90,8 @@ export class I18nStoreImpl extends AbstractI18nStore {
         this.client = client;
         const i18nInstance: i18n = createInstance()
         const options = this.createOptions(allLngs, namespaces, fallbackLng, saveMissing, client, missingKeyStorage);
+        options.resources = await client.translationToResource(options.supportedLngs as readonly string[], namespaces, fallbackLng);
+        console.log("about to initialize instance i18next with options.resources", options.resources ? Object.keys(options.resources).length : "undef")
         await i18nInstance.init(options)
         return i18nInstance;
     }
@@ -117,8 +114,8 @@ export class I18nStoreImpl extends AbstractI18nStore {
             const fallbackLng: string = Array.isArray(options.fallbackLng) ? options.fallbackLng[0] : options.fallbackLng;
             const client = (options as {client: TranslationBackendClient}).client;
 
-            options.resources = await client.translationToResource(options.supportedLngs as readonly string[], namespaces);
-            await i18nInstance.init(options)
+            options.resources = await client.translationToResource(options.supportedLngs as readonly string[], namespaces, fallbackLng);
+            // await i18nInstance.init(options)
 
             console.log("reloaded translation resources for ", (options.supportedLngs as string[]).join(", "),
                 "fallbackLng", fallbackLng)
@@ -145,8 +142,14 @@ export class I18nStoreImpl extends AbstractI18nStore {
             saveMissing: saveMissing,
             preload: allLngs,
             updateMissing: saveMissing,
-            initImmediate: true,
+            // initImmediate: true,
+            initAsync: false,
+            keySeparator: false,
+            missingKeyNoValueFallbackToKey: true,
             client: client,
+            appendNamespaceToMissingKey: false,
+            saveMissingTo: "fallback"/*"current"*/,
+            ignoreJSONStructure: false,
             missingKeyHandler: (lngs: readonly string[],
                                 ns: string,
                                 key: string,
@@ -156,18 +159,15 @@ export class I18nStoreImpl extends AbstractI18nStore {
         }
     }
 
-    public override translate(lng: string, ns: string, key: string): string {
-        if (!this.sharedI18n) {
-            return "translation n/a";
-        }
-        return this.sharedI18n.getFixedT(lng, ns)(key);
-    }
-
     public override translateTranslatableText(lng: string, text: NdTranslatableText): string {
 
         // console.log("translating ", lng, text, I18nStore.sharedI18n ? "present" : "non-present")
 
         if (this.sharedI18n) {
+
+            if (this.missingKeyStorage) {
+                this.missingKeyStorage.onExistingKey(text.ns, text.key)
+            }
 
             const fallbackLng: string = Array.isArray(this.sharedI18n.options.fallbackLng) ?
                 this.sharedI18n.options.fallbackLng[0] : this.sharedI18n.options.fallbackLng;
@@ -186,11 +186,16 @@ export class I18nStoreImpl extends AbstractI18nStore {
             }
 
             const details = this.sharedI18n.getFixedT(lng, text.ns)(text.key, {returnDetails: true})
-            // console.log(">>>>>>>.... details", this.unwrapFromBraces(details.res), details, existingFallback)
+            // console.log(">>>>>>>.... details", I18nStoreImpl.unwrapFromBraces(details.res), details, existingFallback)
             const translationExists = details.usedLng === lng && details.res && details.res.length > 0;
             if (translationExists) {
                 // console.log("text is included in translation")
-                return I18nStoreImpl.unwrapFromBraces(details.res);
+                // return I18nStoreImpl.unwrapFromBraces(details.res);
+                if (text.excludeFromTranslation && details.res.length > 0) {
+                    return I18nStoreImpl.unwrapFromBraces(details.res);
+                } else {
+                    return details.res;
+                }
             } else if (text.excludeFromTranslation && existingFallback.length > 0) {
                 // console.log("text is excluded from translation")
                 return I18nStoreImpl.unwrapFromBraces(existingFallback);

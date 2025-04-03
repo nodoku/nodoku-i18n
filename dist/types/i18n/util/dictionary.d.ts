@@ -3,6 +3,10 @@ export type UpdatedKey = {
     namespace: string;
     key: string;
 };
+export type TranslationKey = {
+    namespace: string;
+    key: string;
+};
 export interface UpdatingValue {
     updKey: UpdatedKey;
     text: string;

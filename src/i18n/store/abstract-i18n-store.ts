@@ -4,7 +4,7 @@ import {LanguageDefImpl} from "../util/language-def-impl";
 
 export abstract class AbstractI18nStore {
 
-    abstract translate(lng: string, ns: string, key: string): string;
+    // abstract translate(lng: string, ns: string, key: string): string;
 
     abstract reloadResources(): Promise<void>;
 
@@ -12,5 +12,5 @@ export abstract class AbstractI18nStore {
 
     abstract translateTranslatableText(lng: string, text: NdTranslatableText): string;
 
-    abstract getRef(): number;
+    // abstract getRef(): number;
 }

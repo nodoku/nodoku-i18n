@@ -1,0 +1,45 @@
+
+# Nodoku License
+
+The Nodoku License to be used depends on the use case you plan to use Nodoku for:
+
+- using Nodoku to build an End Product, which is a webpage or a website for private or commercial use
+  - in short, in this case Nodoku **_is free_** to use under the MIT License (see below for more details)
+
+- using Nodoku to build an End Product, which is a webpage or a website builder (online or offline)
+  - in short, in this case the use of Nodoku **_is prohibited_**
+
+
+Note, that
+> in any case of the allowed, free-of-charge use of Nodoku, the present Nodoku license should be included in all copies of the Software, using Nodoku.
+
+
+
+## Use for private, educational or commercial needs, excluding applications for webpage or website building tools
+
+Any use of Nodoku, except for webpage and website builder applications, is allowed free of charge, under the MIT license
+
+The MIT License (MIT)
+
+Copyright (c) 2025 Nodoku
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+## Use as part of website or webpage builders
+
+The use of Nodoku for the purposes to provide a solution for online (or offline) website or webpage builders is **_prohibited_**.
+
+This prohibition includes the direct or indirect use of the Nodoku library as part of webpage builder solution.
+
+Indirect use of Nodoku library would include building a software that would then be used as part of webpage or website builder.
+
+Webpage or Website builder application is any tool, online or offline, that would allow the End User to build a publishable webpage or website, using no code or low amount of code.
+
+This is prohibited under this license term since that would constitute a direct competition to Nodoku lo-code site builder.
+

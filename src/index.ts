@@ -1,10 +1,14 @@
-import {LanguageDefImpl} from "./i18n/util/language-def-impl";
+import {LanguageDefImpl} from "./i18n/util/language-def-impl.js";
 import {NdI18nextProvider, NdTranslatableText} from "nodoku-core";
-import {I18nStoreImpl} from "./i18n/store/i18n-store-impl";
+import {I18nStoreImpl} from "./i18n/store/i18n-store-impl.js";
 // import {SimplelocalizeBackendApiClientImpl} from "./i18n/vendor/simplelocalize/simplelocalize-backend-api-client";
-import {MissingKeyStorageImpl, OnMissingKeyStrategyImpl, OnFallbackLngTextUpdateStrategyImpl} from "./i18n/backend/missing-key-storage";
-import {AbstractI18nStore} from "./i18n/store/abstract-i18n-store";
-import {TranslationBackendClient} from "./i18n/backend/translation-backend-client";
+import {
+    MissingKeyStorageImpl,
+    OnMissingKeyStrategyImpl,
+    OnFallbackLngTextUpdateStrategyImpl
+} from "./i18n/backend/missing-key-storage.js";
+import {AbstractI18nStore} from "./i18n/store/abstract-i18n-store.js";
+import {TranslationBackendClient} from "./i18n/backend/translation-backend-client.js";
 // import {SimplelocalizeMissingKeyStorage} from "./i18n/vendor/simplelocalize/simplelocalize-missing-key-storage";
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -47,7 +51,7 @@ export namespace NodokuI18n {
         // const missingKeyStorage: MissingKeyStorage =
         //     new SimplelocalizeMissingKeyStorage(i18nStore, onMissingKeyStrategy, onFallbackLngTextUpdateStrategy);
 
-        console.log("initialized client...")
+        console.log("initializing client...")
 
         console.log("in initI18nStore allLlngs, saveMissing, devMode", allLlngs, saveMissing, translationFetchMode)
 

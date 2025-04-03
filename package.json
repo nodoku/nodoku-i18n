@@ -1,6 +1,7 @@
 {
   "name": "nodoku-i18n",
-  "version": "0.3.3",
+  "version": "0.4.0",
+  "license": "MIT for the use not related to website builders, commercial otherwise, contact for details",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
@@ -14,7 +15,8 @@
     "dist"
   ],
   "bin": {
-    "nodoku-i18n-upload-missing-keys-to-simplelocalize": "./dist/esm/bin/upload-missing-keys-to-simplelocalize.js"
+    "nodoku-i18n-upload-missing-keys-to-simplelocalize": "./dist/esm/bin/upload-missing-keys-to-simplelocalize.js",
+    "nodoku-i18n-postprocess-missing-keys-as-json": "./dist/esm/bin/postprocess-missing-keys-as-json.js"
   },
   "type": "module",
   "dependencies": {
@@ -23,11 +25,11 @@
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.2.3",
-    "i18next": "^23.11.5",
-    "next": "14.2.10"
+    "i18next": "^24.2",
+    "next": "^15"
   },
   "peerDependencies": {
-    "nodoku-core": "^0.2"
+    "nodoku-core": "^0.3"
   },
   "devDependencies": {
     "@types/node": "^20",

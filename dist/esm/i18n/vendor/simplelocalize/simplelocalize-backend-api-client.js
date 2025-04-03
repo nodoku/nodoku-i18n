@@ -1,5 +1,5 @@
 import { TranslationBackendClient } from "../../backend/translation-backend-client.js";
-import { delay } from "../../../index";
+import { delay } from "../../../index.js";
 const runsOnServerSide = typeof window === 'undefined';
 if (!runsOnServerSide) {
     throw new Error("this config is intended on server side only");
@@ -29,7 +29,7 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
             return l;
         });
     }
-    translationToResource(allLng, allNs) {
+    translationToResource(allLng, allNs, fallbackLng) {
         switch (this.translationFetchMode) {
             case "api":
                 return SimplelocalizeBackendApiClientImpl.loadTranslationsUsingApi(this, allLng, allNs);
@@ -39,6 +39,7 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
     }
     static async loadTranslationsUsingCdn(client, allLng, allNs) {
         const res = {};
+        console.log("querying the language on CDN ", allLng.join(", "), " on namespace ", allNs, "url", `${client.cdnLoadPathBase}`);
         await Promise.all(allLng.map(async (language) => {
             if (!res.hasOwnProperty(language)) {
                 res[language] = {};
@@ -47,7 +48,7 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
                 if (!res[language].hasOwnProperty(ns)) {
                     res[language][ns] = {};
                 }
-                console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${client.cdnLoadPathBase}/${language}/${ns}`);
+                // console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${client.cdnLoadPathBase}/${language}/${ns}`);
                 const resp = await fetch(`${client.cdnLoadPathBase}/${language}/${ns}`);
                 const reply = await resp.json();
                 // console.log("this is reply", language, ns, reply);
@@ -56,6 +57,15 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
         }));
         // console.log("_______translatedReply_______", allLng, allNs, res)
         return res;
+    }
+    static mergeWithReply(fallbackLngReply, reply) {
+        Object.keys(fallbackLngReply).forEach(k => {
+            if (!reply.hasOwnProperty(k)) {
+                console.log("adding property", k, fallbackLngReply[k]);
+                reply[k] = undefined;
+            }
+        });
+        return reply;
     }
     static async loadTranslationsUsingApi(client, allLng, allNs) {
         console.log("querying the language on API ", allLng.join(", "), " on namespace ", allNs, "url", `${loadTranslationsApiBase}`);
@@ -215,7 +225,21 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
         const json = await resp.json();
         console.log("deleted keys", requestBodyKeys, JSON.stringify(json));
     }
+    async getAllTranslationKeys() {
+        const resp = await fetch(SimplelocalizeBackendApiClientImpl.endpointTranslationKey, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-SimpleLocalize-Token': this.apiKey
+            }
+        });
+        const json = await resp.json();
+        console.log("getting all keys", json);
+        return json.data.map(k => ({ namespace: k.namespace, key: k.key }));
+    }
 }
 SimplelocalizeBackendApiClientImpl.cdnBaseUrl = "https://cdn.simplelocalize.io";
 SimplelocalizeBackendApiClientImpl.endpointUpdateKeys = "https://api.simplelocalize.io/api/v2/translations/bulk";
 SimplelocalizeBackendApiClientImpl.endpointUploadKeys = "https://api.simplelocalize.io/api/v1/translation-keys/bulk";
+SimplelocalizeBackendApiClientImpl.endpointTranslationKey = "https://api.simplelocalize.io/api/v1/translation-keys/list";

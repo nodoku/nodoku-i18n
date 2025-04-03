@@ -2,7 +2,8 @@ import {Resource} from "i18next";
 import {LanguageDefImpl} from "../../util/language-def-impl.js";
 import {UpdatedKey, UpdatingValue} from "../../util/dictionary.js";
 import {TranslationBackendClient} from "../../backend/translation-backend-client.js";
-import {delay} from "../../../index";
+import {delay} from "../../../index.js";
+import {TranslationKey} from "../../util/dictionary.js";
 
 const runsOnServerSide = typeof window === 'undefined'
 
@@ -21,6 +22,7 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
     private static cdnBaseUrl = "https://cdn.simplelocalize.io";
     private static endpointUpdateKeys = "https://api.simplelocalize.io/api/v2/translations/bulk"
     private static endpointUploadKeys = "https://api.simplelocalize.io/api/v1/translation-keys/bulk"
+    private static endpointTranslationKey = "https://api.simplelocalize.io/api/v1/translation-keys/list"
 
     private apiKey: string;
     private projectToken: string;
@@ -61,7 +63,7 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
     }
 
 
-    public override translationToResource(allLng: readonly string[], allNs: readonly string[]): Promise</*AllLanguagesAllNamespacesTranslationResource*/Resource> {
+    public override translationToResource(allLng: readonly string[], allNs: readonly string[], fallbackLng: string): Promise</*AllLanguagesAllNamespacesTranslationResource*/Resource> {
         switch (this.translationFetchMode) {
             case "api":
                 return SimplelocalizeBackendApiClientImpl.loadTranslationsUsingApi(this, allLng, allNs);
@@ -75,6 +77,8 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
 
         const res: Resource = {};
 
+        console.log("querying the language on CDN ", allLng.join(", "), " on namespace ", allNs, "url", `${client.cdnLoadPathBase}`);
+
         await Promise.all(allLng.map(async (language: string): Promise<void> => {
             if (!res.hasOwnProperty(language)) {
                 res[language] = {};
@@ -83,7 +87,7 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
                 if (!res[language].hasOwnProperty(ns)) {
                     res[language][ns] = {}
                 }
-                console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${client.cdnLoadPathBase}/${language}/${ns}`);
+                // console.log("querying the language on CDN", language, " on namespace ", ns, "url", `${client.cdnLoadPathBase}/${language}/${ns}`);
                 const resp = await fetch(`${client.cdnLoadPathBase}/${language}/${ns}`);
                 const reply = await resp.json();
                 // console.log("this is reply", language, ns, reply);
@@ -93,6 +97,16 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
 
         // console.log("_______translatedReply_______", allLng, allNs, res)
         return res;
+    }
+
+    private static mergeWithReply(fallbackLngReply: any, reply: any): any {
+        Object.keys(fallbackLngReply).forEach(k => {
+            if (!reply.hasOwnProperty(k)) {
+                console.log("adding property", k, fallbackLngReply[k]);
+                reply[k] = undefined;
+            }
+        })
+        return reply;
     }
 
     public static async loadTranslationsUsingApi(client: SimplelocalizeBackendApiClientImpl, allLng: readonly string[], allNs: readonly string[]): Promise<Resource> {
@@ -264,7 +278,7 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
 
     }
 
-    public async deleteKeys(reqs: UpdatedKey[]): Promise<void> {
+    public async deleteKeys(reqs: TranslationKey[]): Promise<void> {
         const requestBodyKeys: {
             translationKeys: { key: string, namespace: string }[],
         } = {
@@ -293,6 +307,24 @@ export class SimplelocalizeBackendApiClientImpl extends TranslationBackendClient
         });
         const json  = await resp.json();
         console.log("deleted keys", requestBodyKeys, JSON.stringify(json));
+
+    }
+
+    public override async getAllTranslationKeys(): Promise<TranslationKey[]> {
+
+
+        const resp: Response = await fetch(SimplelocalizeBackendApiClientImpl.endpointTranslationKey, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-SimpleLocalize-Token': this.apiKey
+            }
+        });
+        const json  = await resp.json();
+        console.log("getting all keys", json);
+
+        return (json.data as any[]).map(k => ({namespace: k.namespace, key: k.key}));
 
     }
 

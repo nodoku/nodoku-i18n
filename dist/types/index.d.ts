@@ -1,8 +1,8 @@
-import { LanguageDefImpl } from "./i18n/util/language-def-impl";
+import { LanguageDefImpl } from "./i18n/util/language-def-impl.js";
 import { NdI18nextProvider } from "nodoku-core";
-import { MissingKeyStorageImpl, OnMissingKeyStrategyImpl, OnFallbackLngTextUpdateStrategyImpl } from "./i18n/backend/missing-key-storage";
-import { AbstractI18nStore } from "./i18n/store/abstract-i18n-store";
-import { TranslationBackendClient } from "./i18n/backend/translation-backend-client";
+import { MissingKeyStorageImpl, OnMissingKeyStrategyImpl, OnFallbackLngTextUpdateStrategyImpl } from "./i18n/backend/missing-key-storage.js";
+import { AbstractI18nStore } from "./i18n/store/abstract-i18n-store.js";
+import { TranslationBackendClient } from "./i18n/backend/translation-backend-client.js";
 export declare const delay: (ms: number) => Promise<unknown>;
 export declare namespace NodokuI18n {
     type LanguageDef = LanguageDefImpl;

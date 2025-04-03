@@ -59,6 +59,8 @@ export abstract class MissingKeyStorageImpl {
                           updateMissing: boolean,
                           options: any): void;
 
+    abstract onExistingKey(ns: string, key: string): void;
+
     abstract pushMissingKeys(client: TranslationBackendClient): Promise<void>;
 
 }

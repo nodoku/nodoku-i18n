@@ -1,6 +1,6 @@
 import { createInstance } from "i18next";
-import { AbstractI18nStore } from "./abstract-i18n-store";
-import { delay } from "../../index";
+import { AbstractI18nStore } from "./abstract-i18n-store.js";
+import { delay } from "../../index.js";
 export class I18nStoreImpl extends AbstractI18nStore {
     constructor() {
         super();
@@ -8,17 +8,14 @@ export class I18nStoreImpl extends AbstractI18nStore {
         this.isInitStarted = false;
         this.ref = Math.random();
     }
-    getRef() {
-        return this.ref;
-    }
     static createStore() {
         return new I18nStoreImpl();
     }
     async initStore(allLngs, nampespaces, fallbackLng, saveMissing, loadOnInit, client, missingKeyStorage) {
-        // console.log("this.sharedI18n defined", this.sharedI18n !== undefined)
+        console.log("this.sharedI18n defined", this.sharedI18n !== undefined);
         if (this.sharedI18n !== undefined) {
             if (loadOnInit) {
-                console.log("this.sharedI18n defined, and refetching resources...");
+                console.log("this.sharedI18n is already defined, refetching resources...");
                 await I18nStoreImpl.reloadResourcesForI18n(this.sharedI18n);
             }
             return;
@@ -34,12 +31,14 @@ export class I18nStoreImpl extends AbstractI18nStore {
             return;
         }
         this.isInitStarted = true;
+        console.log("creating and initializing i18next instance...", allLngs);
         const instanceInCreation = await this.createAndInitI18next(allLngs, nampespaces, fallbackLng, saveMissing, client, missingKeyStorage /*resourceLoader, missingKeyHandler*/);
         if (!loadOnInit) {
             await I18nStoreImpl.reloadResourcesForI18n(instanceInCreation);
         }
         this.sharedI18n = instanceInCreation;
         this.isInitStarted = false;
+        this.missingKeyStorage = missingKeyStorage;
         // console.log("this.sharedI18n defined", this.sharedI18n !== undefined, this.ref)
     }
     allLanguages() {
@@ -52,6 +51,8 @@ export class I18nStoreImpl extends AbstractI18nStore {
         this.client = client;
         const i18nInstance = createInstance();
         const options = this.createOptions(allLngs, namespaces, fallbackLng, saveMissing, client, missingKeyStorage);
+        options.resources = await client.translationToResource(options.supportedLngs, namespaces, fallbackLng);
+        console.log("about to initialize instance i18next with options.resources", options.resources ? Object.keys(options.resources).length : "undef");
         await i18nInstance.init(options);
         return i18nInstance;
     }
@@ -68,8 +69,8 @@ export class I18nStoreImpl extends AbstractI18nStore {
             const namespaces = Array.isArray(options.ns) ? options.ns || [] : [options.ns];
             const fallbackLng = Array.isArray(options.fallbackLng) ? options.fallbackLng[0] : options.fallbackLng;
             const client = options.client;
-            options.resources = await client.translationToResource(options.supportedLngs, namespaces);
-            await i18nInstance.init(options);
+            options.resources = await client.translationToResource(options.supportedLngs, namespaces, fallbackLng);
+            // await i18nInstance.init(options)
             console.log("reloaded translation resources for ", options.supportedLngs.join(", "), "fallbackLng", fallbackLng);
         }
     }
@@ -84,20 +85,23 @@ export class I18nStoreImpl extends AbstractI18nStore {
             saveMissing: saveMissing,
             preload: allLngs,
             updateMissing: saveMissing,
-            initImmediate: true,
+            // initImmediate: true,
+            initAsync: false,
+            keySeparator: false,
+            missingKeyNoValueFallbackToKey: true,
             client: client,
+            appendNamespaceToMissingKey: false,
+            saveMissingTo: "fallback" /*"current"*/,
+            ignoreJSONStructure: false,
             missingKeyHandler: (lngs, ns, key, fallbackValue, updateMissing, options) => missingKeyStorage.onMissingKey(lngs, ns, key, fallbackValue, updateMissing, options)
         };
-    }
-    translate(lng, ns, key) {
-        if (!this.sharedI18n) {
-            return "translation n/a";
-        }
-        return this.sharedI18n.getFixedT(lng, ns)(key);
     }
     translateTranslatableText(lng, text) {
         // console.log("translating ", lng, text, I18nStore.sharedI18n ? "present" : "non-present")
         if (this.sharedI18n) {
+            if (this.missingKeyStorage) {
+                this.missingKeyStorage.onExistingKey(text.ns, text.key);
+            }
             const fallbackLng = Array.isArray(this.sharedI18n.options.fallbackLng) ?
                 this.sharedI18n.options.fallbackLng[0] : this.sharedI18n.options.fallbackLng;
             /*
@@ -112,11 +116,17 @@ export class I18nStoreImpl extends AbstractI18nStore {
                 }
             }
             const details = this.sharedI18n.getFixedT(lng, text.ns)(text.key, { returnDetails: true });
-            // console.log(">>>>>>>.... details", this.unwrapFromBraces(details.res), details, existingFallback)
+            // console.log(">>>>>>>.... details", I18nStoreImpl.unwrapFromBraces(details.res), details, existingFallback)
             const translationExists = details.usedLng === lng && details.res && details.res.length > 0;
             if (translationExists) {
                 // console.log("text is included in translation")
-                return I18nStoreImpl.unwrapFromBraces(details.res);
+                // return I18nStoreImpl.unwrapFromBraces(details.res);
+                if (text.excludeFromTranslation && details.res.length > 0) {
+                    return I18nStoreImpl.unwrapFromBraces(details.res);
+                }
+                else {
+                    return details.res;
+                }
             }
             else if (text.excludeFromTranslation && existingFallback.length > 0) {
                 // console.log("text is excluded from translation")

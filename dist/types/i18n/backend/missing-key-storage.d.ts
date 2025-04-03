@@ -11,5 +11,6 @@ export declare enum OnMissingKeyStrategyImpl {
 export declare abstract class MissingKeyStorageImpl {
     abstract onFallbackLanguageValueChange(language: string, namespace: string, key: string, text: string): void;
     abstract onMissingKey(lngs: readonly string[], ns: string, key: string, fallbackValue: string, updateMissing: boolean, options: any): void;
+    abstract onExistingKey(ns: string, key: string): void;
     abstract pushMissingKeys(client: TranslationBackendClient): Promise<void>;
 }

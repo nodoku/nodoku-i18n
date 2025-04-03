@@ -1,5 +1,6 @@
 
 export type UpdatedKey = {language: string; namespace: string; key: string}
+export type TranslationKey = {namespace: string; key: string}
 
 export interface UpdatingValue {
     updKey: UpdatedKey;
